@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+option go_package = "github.com/matheusmosca/walrus/proto/walrus";
+
+package walrus;
+
+service Walrus {
+  rpc Subscribe(stream SubscribeRequest) returns (stream SubscribeResponse);
+  rpc Publish(PublishRequest) returns (PublishResponse);
+}
+
+message SubscribeRequest {
+  string topic = 1;
+  string consumer_name = 2;
+}
+
+message SubscribeResponse {
+  Message message = 1;
+}
+
+message PublishRequest {
+  Message message = 1;
+}
+
+message PublishResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message Message {
+  string topic = 1;
+  string created_by = 2; 
+  bytes body = 3;
+}
