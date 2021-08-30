@@ -20,13 +20,13 @@ func main() {
 
 	client := pb.NewWalrusClient(conn)
 
-	stream, err := client.Subscribe(context.Background())
-	if err != nil {
-		logrus.Fatal(err)
-	}
 	req := &pb.SubscribeRequest{
 		Topic:        "account_created",
 		ConsumerName: "example_consumer",
+	}
+	stream, err := client.Subscribe(context.Background(), req)
+	if err != nil {
+		logrus.Fatal(err)
 	}
 
 	for {
@@ -38,9 +38,5 @@ func main() {
 			logrus.Fatal(err)
 		}
 		logrus.Infof("subscriber got %v", in)
-		if err = stream.Send(req); err != nil {
-			logrus.Fatal(err)
-		}
-
 	}
 }

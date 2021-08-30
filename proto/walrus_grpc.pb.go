@@ -7,6 +7,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -18,8 +19,8 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type WalrusClient interface {
-	Subscribe(ctx context.Context, opts ...grpc.CallOption) (Walrus_SubscribeClient, error)
-	Publish(ctx context.Context, in *PublishRequest, opts ...grpc.CallOption) (*PublishResponse, error)
+	Subscribe(ctx context.Context, in *SubscribeRequest, opts ...grpc.CallOption) (Walrus_SubscribeClient, error)
+	Publish(ctx context.Context, in *PublishRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type walrusClient struct {
@@ -30,27 +31,28 @@ func NewWalrusClient(cc grpc.ClientConnInterface) WalrusClient {
 	return &walrusClient{cc}
 }
 
-func (c *walrusClient) Subscribe(ctx context.Context, opts ...grpc.CallOption) (Walrus_SubscribeClient, error) {
+func (c *walrusClient) Subscribe(ctx context.Context, in *SubscribeRequest, opts ...grpc.CallOption) (Walrus_SubscribeClient, error) {
 	stream, err := c.cc.NewStream(ctx, &Walrus_ServiceDesc.Streams[0], "/walrus.Walrus/Subscribe", opts...)
 	if err != nil {
 		return nil, err
 	}
 	x := &walrusSubscribeClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
 	return x, nil
 }
 
 type Walrus_SubscribeClient interface {
-	Send(*SubscribeRequest) error
 	Recv() (*SubscribeResponse, error)
 	grpc.ClientStream
 }
 
 type walrusSubscribeClient struct {
 	grpc.ClientStream
-}
-
-func (x *walrusSubscribeClient) Send(m *SubscribeRequest) error {
-	return x.ClientStream.SendMsg(m)
 }
 
 func (x *walrusSubscribeClient) Recv() (*SubscribeResponse, error) {
@@ -61,8 +63,8 @@ func (x *walrusSubscribeClient) Recv() (*SubscribeResponse, error) {
 	return m, nil
 }
 
-func (c *walrusClient) Publish(ctx context.Context, in *PublishRequest, opts ...grpc.CallOption) (*PublishResponse, error) {
-	out := new(PublishResponse)
+func (c *walrusClient) Publish(ctx context.Context, in *PublishRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/walrus.Walrus/Publish", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -74,18 +76,18 @@ func (c *walrusClient) Publish(ctx context.Context, in *PublishRequest, opts ...
 // All implementations should embed UnimplementedWalrusServer
 // for forward compatibility
 type WalrusServer interface {
-	Subscribe(Walrus_SubscribeServer) error
-	Publish(context.Context, *PublishRequest) (*PublishResponse, error)
+	Subscribe(*SubscribeRequest, Walrus_SubscribeServer) error
+	Publish(context.Context, *PublishRequest) (*emptypb.Empty, error)
 }
 
 // UnimplementedWalrusServer should be embedded to have forward compatible implementations.
 type UnimplementedWalrusServer struct {
 }
 
-func (UnimplementedWalrusServer) Subscribe(Walrus_SubscribeServer) error {
+func (UnimplementedWalrusServer) Subscribe(*SubscribeRequest, Walrus_SubscribeServer) error {
 	return status.Errorf(codes.Unimplemented, "method Subscribe not implemented")
 }
-func (UnimplementedWalrusServer) Publish(context.Context, *PublishRequest) (*PublishResponse, error) {
+func (UnimplementedWalrusServer) Publish(context.Context, *PublishRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Publish not implemented")
 }
 
@@ -101,12 +103,15 @@ func RegisterWalrusServer(s grpc.ServiceRegistrar, srv WalrusServer) {
 }
 
 func _Walrus_Subscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(WalrusServer).Subscribe(&walrusSubscribeServer{stream})
+	m := new(SubscribeRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(WalrusServer).Subscribe(m, &walrusSubscribeServer{stream})
 }
 
 type Walrus_SubscribeServer interface {
 	Send(*SubscribeResponse) error
-	Recv() (*SubscribeRequest, error)
 	grpc.ServerStream
 }
 
@@ -116,14 +121,6 @@ type walrusSubscribeServer struct {
 
 func (x *walrusSubscribeServer) Send(m *SubscribeResponse) error {
 	return x.ServerStream.SendMsg(m)
-}
-
-func (x *walrusSubscribeServer) Recv() (*SubscribeRequest, error) {
-	m := new(SubscribeRequest)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
 }
 
 func _Walrus_Publish_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -161,7 +158,6 @@ var Walrus_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "Subscribe",
 			Handler:       _Walrus_Subscribe_Handler,
 			ServerStreams: true,
-			ClientStreams: true,
 		},
 	},
 	Metadata: "walrus.proto",

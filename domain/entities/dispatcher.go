@@ -10,7 +10,7 @@ type dispatcher struct {
 
 type Dispatcher interface {
 	AddSubscriber(Subscriber)
-	// TODO implement it
+	// TODO RemoveSubscriber
 	// RemoveSubscriber(Subscriber)
 	Dispatch(vos.Message)
 	Activate()

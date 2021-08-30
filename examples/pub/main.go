@@ -21,9 +21,9 @@ func main() {
 
 	res, err := client.Publish(context.Background(), &pb.PublishRequest{
 		Message: &pb.Message{
-			Topic:     "account_created",
-			CreatedBy: "example_pub",
-			Body:      []byte("some body message"),
+			Topic:       "account_created",
+			PublishedBy: "example_pub",
+			Body:        []byte("some body message"),
 		},
 	})
 	if err != nil {
