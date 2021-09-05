@@ -3,6 +3,7 @@ package entities
 import "github.com/matheusmosca/walrus/domain/vos"
 
 type topic struct {
+	name        vos.TopicName
 	subscribers []Subscriber
 	newMessage  chan vos.Message
 	newSub      chan Subscriber
@@ -16,12 +17,17 @@ type Topic interface {
 	Activate()
 }
 
-func NewTopic() Topic {
+func NewTopic(topicName vos.TopicName) (Topic, error) {
+	if err := topicName.Validate(); err != nil {
+		return nil, err
+	}
+
 	return topic{
+		name:        topicName,
 		subscribers: []Subscriber{},
 		newMessage:  make(chan vos.Message),
 		newSub:      make(chan Subscriber),
-	}
+	}, nil
 }
 
 func (t topic) AddSubscriber(sub Subscriber) {
