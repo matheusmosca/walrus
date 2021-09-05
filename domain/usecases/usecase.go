@@ -10,9 +10,13 @@ import (
 type topics map[vos.TopicName]entities.Topic
 
 type useCase struct {
-	// TODO add a repository layer and add TopicRepository via
-	// dependecy injection here
-	topics topics
+	storage Repository
+	topics  topics
+}
+
+type Repository interface {
+	CreateTopic(ctx context.Context, name vos.TopicName, topic entities.Topic) error
+	GetTopic(ctx context.Context, topicName vos.TopicName) (entities.Topic, error)
 }
 
 type UseCase interface {
@@ -20,8 +24,9 @@ type UseCase interface {
 	Subscribe(ctx context.Context, subscriberID string, topicName vos.TopicName) (<-chan vos.Message, error)
 }
 
-func New() UseCase {
+func New(storage Repository) UseCase {
 	return useCase{
-		topics: make(topics),
+		storage: storage,
+		topics:  make(topics),
 	}
 }

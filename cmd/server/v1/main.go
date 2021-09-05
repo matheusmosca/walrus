@@ -8,8 +8,11 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/matheusmosca/walrus/config"
+	"github.com/matheusmosca/walrus/domain/entities"
 	"github.com/matheusmosca/walrus/domain/usecases"
+	"github.com/matheusmosca/walrus/domain/vos"
 	pb "github.com/matheusmosca/walrus/proto"
+	"github.com/matheusmosca/walrus/repositories/memory/topics"
 	rpc "github.com/matheusmosca/walrus/rpc/v1"
 )
 
@@ -27,12 +30,14 @@ func main() {
 
 	lis, err := net.Listen("tcp", fmt.Sprintf("%s:%s", config.Host, config.Port))
 	if err != nil {
-		logEntry.Fatal("could not listen in host %s and port %s", config.Host, config.Port)
+		logEntry.Fatalf("could not listen in host %s and port %s", config.Host, config.Port)
 	}
 
 	server := grpc.NewServer()
 
-	usecase := usecases.New()
+	repository := topics.NewMemoryRepository(make(map[vos.TopicName]entities.Topic))
+
+	usecase := usecases.New(repository)
 	rpcMethods := rpc.New(usecase, logEntry)
 
 	pb.RegisterWalrusServer(server, rpcMethods)

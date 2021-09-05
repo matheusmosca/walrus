@@ -3,7 +3,6 @@ package usecases
 import (
 	"context"
 
-	"github.com/matheusmosca/walrus/domain/entities"
 	"github.com/matheusmosca/walrus/domain/vos"
 )
 
@@ -12,9 +11,9 @@ func (u useCase) Publish(ctx context.Context, message vos.Message) error {
 		return err
 	}
 
-	topic, ok := u.topics[message.TopicName]
-	if !ok {
-		return entities.ErrTopicNotFound
+	topic, err := u.storage.GetTopic(ctx, message.TopicName)
+	if err != nil {
+		return err
 	}
 
 	topic.Dispatch(message)
