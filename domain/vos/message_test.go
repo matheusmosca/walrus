@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestValidate(t *testing.T) {
+func TestMessageValidate(t *testing.T) {
 	type args struct {
 		message Message
 	}
@@ -22,7 +22,7 @@ func TestValidate(t *testing.T) {
 			args: args{
 				message: Message{
 					PublishedBy: "any",
-					Topic:       "any",
+					TopicName:   "any",
 					Body:        make([]byte, 0),
 				},
 			},
@@ -33,7 +33,7 @@ func TestValidate(t *testing.T) {
 			args: args{
 				message: Message{
 					PublishedBy: "",
-					Topic:       "any",
+					TopicName:   "any",
 					Body:        make([]byte, 0),
 				},
 			},
@@ -44,7 +44,7 @@ func TestValidate(t *testing.T) {
 			args: args{
 				message: Message{
 					PublishedBy: "an",
-					Topic:       "any",
+					TopicName:   "any",
 					Body:        make([]byte, 0),
 				},
 			},
@@ -55,7 +55,7 @@ func TestValidate(t *testing.T) {
 			args: args{
 				message: Message{
 					PublishedBy: "publisher-name",
-					Topic:       "",
+					TopicName:   "",
 					Body:        make([]byte, 0),
 				},
 			},
@@ -66,7 +66,7 @@ func TestValidate(t *testing.T) {
 			args: args{
 				message: Message{
 					PublishedBy: "publisher-name",
-					Topic:       "an",
+					TopicName:   "an",
 					Body:        make([]byte, 0),
 				},
 			},

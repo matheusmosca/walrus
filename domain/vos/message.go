@@ -1,8 +1,8 @@
 package vos
 
 type Message struct {
+	TopicName   TopicName
 	PublishedBy string
-	Topic       string
 	Body        []byte
 }
 
@@ -13,11 +13,8 @@ func (m Message) Validate() error {
 	if len(m.PublishedBy) < 3 {
 		return ErrPublishedByTooShort
 	}
-	if m.Topic == "" {
-		return ErrEmptyTopicName
-	}
-	if len(m.Topic) < 3 {
-		return ErrTopicNameTooShort
+	if err := m.TopicName.Validate(); err != nil {
+		return err
 	}
 
 	return nil
