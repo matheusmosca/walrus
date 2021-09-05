@@ -4,12 +4,12 @@ import (
 	"github.com/matheusmosca/walrus/domain/entities"
 )
 
-type RPCServer struct {
+type RPC struct {
 	dispatcher entities.Dispatcher
 }
 
-func NewServer(dispatcher entities.Dispatcher) RPCServer {
-	return RPCServer{
+func New(dispatcher entities.Dispatcher) RPC {
+	return RPC{
 		dispatcher: dispatcher,
 	}
 }

@@ -30,7 +30,7 @@ func main() {
 
 	server := grpc.NewServer()
 
-	rpcMethods := rpc.NewServer(dispatcher)
+	rpcMethods := rpc.New(dispatcher)
 
 	pb.RegisterWalrusServer(server, rpcMethods)
 

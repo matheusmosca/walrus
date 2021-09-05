@@ -9,7 +9,7 @@ import (
 	pb "github.com/matheusmosca/walrus/proto"
 )
 
-func (r RPCServer) Publish(ctx context.Context, req *pb.PublishRequest) (*emptypb.Empty, error) {
+func (r RPC) Publish(ctx context.Context, req *pb.PublishRequest) (*emptypb.Empty, error) {
 	msg := vos.Message{
 		PublishedBy: req.Message.PublishedBy,
 		Topic:       req.Message.Topic,

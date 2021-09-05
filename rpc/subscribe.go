@@ -7,7 +7,7 @@ import (
 	pb "github.com/matheusmosca/walrus/proto"
 )
 
-func (r RPCServer) Subscribe(req *pb.SubscribeRequest, stream pb.Walrus_SubscribeServer) error {
+func (r RPC) Subscribe(req *pb.SubscribeRequest, stream pb.Walrus_SubscribeServer) error {
 	subscriber := entities.NewSubscriber(uuid.New().String(), r.dispatcher)
 	r.dispatcher.AddSubscriber(subscriber)
 
