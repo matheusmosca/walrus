@@ -7,23 +7,23 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 
+	"github.com/matheusmosca/walrus/config"
 	"github.com/matheusmosca/walrus/domain/usecases"
 	pb "github.com/matheusmosca/walrus/proto"
 	rpc "github.com/matheusmosca/walrus/rpc/v1"
 )
 
-// TODO pick those values through env
-const (
-	host = "localhost"
-	port = 3000
-)
-
 func main() {
+	config, err := config.Load()
+	if err != nil {
+		logrus.Fatal("could not load environment config")
+	}
+
 	usecase := usecases.New()
 
-	lis, err := net.Listen("tcp", fmt.Sprintf("%s:%d", host, port))
+	lis, err := net.Listen("tcp", fmt.Sprintf("%s:%s", config.Host, config.Port))
 	if err != nil {
-		logrus.Fatal("could not listen in host %s and port %d", host, port)
+		logrus.Fatal("could not listen in host %s and port %s", config.Host, config.Port)
 	}
 
 	server := grpc.NewServer()
@@ -32,6 +32,6 @@ func main() {
 
 	pb.RegisterWalrusServer(server, rpcMethods)
 
-	logrus.Infof("starting server on %s:%d", host, port)
+	logrus.Infof("starting server on %s:%s", config.Host, config.Port)
 	server.Serve(lis)
 }
