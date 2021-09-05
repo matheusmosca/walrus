@@ -13,7 +13,7 @@ service Walrus {
 
 message SubscribeRequest {
   string topic = 1;
-  string consumer_name = 2;
+  string subscriber_id = 2;
 }
 
 message SubscribeResponse {

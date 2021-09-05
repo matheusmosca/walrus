@@ -8,7 +8,7 @@ import (
 )
 
 func (r RPC) Subscribe(req *pb.SubscribeRequest, stream pb.Walrus_SubscribeServer) error {
-	subscriptionCh, err := r.useCase.Subscribe(context.TODO(), req.ConsumerName, vos.TopicName(req.Topic))
+	subscriptionCh, err := r.useCase.Subscribe(context.TODO(), req.SubscriberId, vos.TopicName(req.Topic))
 	if err != nil {
 		return err
 	}

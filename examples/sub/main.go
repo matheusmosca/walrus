@@ -22,7 +22,7 @@ func main() {
 
 	req := &pb.SubscribeRequest{
 		Topic:        "account_created",
-		ConsumerName: "example_consumer",
+		SubscriberId: "example_subscriber",
 	}
 	stream, err := client.Subscribe(context.Background(), req)
 	if err != nil {
