@@ -3,19 +3,19 @@ package entities
 import "github.com/matheusmosca/walrus/domain/vos"
 
 type publisher struct {
-	dispatcher Dispatcher
+	topic Topic
 }
 
 type Publisher interface {
 	Publish(vos.Message)
 }
 
-func NewPublisher(d Dispatcher) Publisher {
+func NewPublisher(t Topic) Publisher {
 	return publisher{
-		dispatcher: d,
+		topic: t,
 	}
 }
 
 func (p publisher) Publish(message vos.Message) {
-	p.dispatcher.Dispatch(message)
+	p.topic.Dispatch(message)
 }

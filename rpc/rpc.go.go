@@ -5,10 +5,10 @@ import (
 )
 
 type RPC struct {
-	dispatcher entities.Dispatcher
+	dispatcher entities.Topic
 }
 
-func New(dispatcher entities.Dispatcher) RPC {
+func New(dispatcher entities.Topic) RPC {
 	return RPC{
 		dispatcher: dispatcher,
 	}

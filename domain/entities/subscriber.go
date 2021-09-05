@@ -3,9 +3,9 @@ package entities
 import "github.com/matheusmosca/walrus/domain/vos"
 
 type subscriber struct {
-	id         string
-	subChann   chan vos.Message
-	dispatcher Dispatcher
+	id       string
+	subChann chan vos.Message
+	topic    Topic
 }
 
 type Subscriber interface {
@@ -13,18 +13,18 @@ type Subscriber interface {
 	ReceiveMessage(vos.Message)
 }
 
-func NewSubscriber(id string, dispatcher Dispatcher) Subscriber {
+func NewSubscriber(id string, topic Topic) Subscriber {
 	sub := subscriber{
-		id:         id,
-		subChann:   make(chan vos.Message),
-		dispatcher: dispatcher,
+		id:       id,
+		subChann: make(chan vos.Message),
+		topic:    topic,
 	}
 
 	return sub
 }
 
 func (s subscriber) Subscribe() <-chan vos.Message {
-	s.dispatcher.AddSubscriber(s)
+	s.topic.AddSubscriber(s)
 	return s.subChann
 }
 

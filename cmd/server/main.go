@@ -19,7 +19,7 @@ const (
 )
 
 func main() {
-	dispatcher := entities.NewDispatcher()
+	dispatcher := entities.NewTopic()
 
 	dispatcher.Activate()
 
