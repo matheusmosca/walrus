@@ -19,19 +19,24 @@ func main() {
 		logrus.Fatal("could not load environment config")
 	}
 
-	usecase := usecases.New()
+	logger := logrus.New()
+	logEntry := logrus.NewEntry(logger).WithFields(logrus.Fields{
+		"app_name":    config.AppName,
+		"environment": config.Environment,
+	})
 
 	lis, err := net.Listen("tcp", fmt.Sprintf("%s:%s", config.Host, config.Port))
 	if err != nil {
-		logrus.Fatal("could not listen in host %s and port %s", config.Host, config.Port)
+		logEntry.Fatal("could not listen in host %s and port %s", config.Host, config.Port)
 	}
 
 	server := grpc.NewServer()
 
-	rpcMethods := rpc.New(usecase)
+	usecase := usecases.New()
+	rpcMethods := rpc.New(usecase, logEntry)
 
 	pb.RegisterWalrusServer(server, rpcMethods)
 
-	logrus.Infof("starting server on %s:%s", config.Host, config.Port)
+	logEntry.Infof("starting server on %s:%s", config.Host, config.Port)
 	server.Serve(lis)
 }
