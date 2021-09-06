@@ -1,33 +1,42 @@
 package entities
 
-import "github.com/matheusmosca/walrus/domain/vos"
+import (
+	"github.com/google/uuid"
+
+	"github.com/matheusmosca/walrus/domain/vos"
+)
 
 type subscriber struct {
-	id       string
-	subChann chan vos.Message
-	topic    Topic
+	id             string
+	subscriptionCh chan vos.Message
+	topic          Topic
 }
 
 type Subscriber interface {
-	Subscribe() <-chan vos.Message
+	GetID() string
 	ReceiveMessage(vos.Message)
+	Subscribe() (chan vos.Message, string)
 }
 
-func NewSubscriber(id string, topic Topic) Subscriber {
+func NewSubscriber(topic Topic) Subscriber {
 	sub := subscriber{
-		id:       id,
-		subChann: make(chan vos.Message),
-		topic:    topic,
+		id:             uuid.NewString(),
+		subscriptionCh: make(chan vos.Message),
+		topic:          topic,
 	}
 
 	return sub
 }
 
-func (s subscriber) Subscribe() <-chan vos.Message {
+func (s subscriber) Subscribe() (chan vos.Message, string) {
 	s.topic.AddSubscriber(s)
-	return s.subChann
+	return s.subscriptionCh, s.GetID()
 }
 
 func (s subscriber) ReceiveMessage(msg vos.Message) {
-	s.subChann <- msg
+	s.subscriptionCh <- msg
+}
+
+func (s subscriber) GetID() string {
+	return s.id
 }

@@ -21,8 +21,7 @@ func main() {
 	client := pb.NewWalrusClient(conn)
 
 	req := &pb.SubscribeRequest{
-		Topic:        "account_created",
-		SubscriberId: "example_subscriber",
+		Topic: "account_created",
 	}
 	stream, err := client.Subscribe(context.Background(), req)
 	if err != nil {

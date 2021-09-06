@@ -8,30 +8,30 @@ import (
 	"github.com/matheusmosca/walrus/domain/vos"
 )
 
-func (u useCase) Subscribe(ctx context.Context, subscriberID string, topicName vos.TopicName) (<-chan vos.Message, error) {
+func (u useCase) Subscribe(ctx context.Context, topicName vos.TopicName) (chan vos.Message, string, error) {
 	if err := topicName.Validate(); err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	topic, err := u.storage.GetTopic(ctx, topicName)
 	if err != nil {
 		if !errors.Is(err, entities.ErrTopicNotFound) {
-			return nil, err
+			return nil, "", err
 		}
 
 		topic, err = u.createTopic(ctx, topicName)
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 
-		subscriber := entities.NewSubscriber(subscriberID, topic)
+		subscriber := entities.NewSubscriber(topic)
 
-		subscriptionCh := subscriber.Subscribe()
-		return subscriptionCh, nil
+		subscriptionCh, id := subscriber.Subscribe()
+		return subscriptionCh, id, nil
 	}
 
-	subscriber := entities.NewSubscriber(subscriberID, topic)
+	subscriber := entities.NewSubscriber(topic)
 
-	subscriptionCh := subscriber.Subscribe()
-	return subscriptionCh, nil
+	subscriptionCh, id := subscriber.Subscribe()
+	return subscriptionCh, id, nil
 }
