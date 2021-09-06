@@ -8,7 +8,7 @@ import (
 	"github.com/matheusmosca/walrus/domain/vos"
 )
 
-func (u useCase) Subscribe(ctx context.Context, topicName vos.TopicName) (chan vos.Message, string, error) {
+func (u useCase) Subscribe(ctx context.Context, topicName vos.TopicName) (chan vos.Message, vos.SubscriberID, error) {
 	if err := topicName.Validate(); err != nil {
 		return nil, "", err
 	}

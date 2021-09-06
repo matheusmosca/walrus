@@ -10,7 +10,7 @@ type topic struct {
 	name         vos.TopicName
 	subscribers  sync.Map
 	newMessageCh chan vos.Message
-	killSubCh    chan string
+	killSubCh    chan vos.SubscriberID
 	newSubCh     chan Subscriber
 }
 
@@ -18,7 +18,7 @@ type Topic interface {
 	Activate()
 	Dispatch(vos.Message)
 	AddSubscriber(Subscriber)
-	RemoveSubscriber(subscriberID string)
+	RemoveSubscriber(vos.SubscriberID)
 }
 
 func NewTopic(topicName vos.TopicName) (Topic, error) {
@@ -31,7 +31,7 @@ func NewTopic(topicName vos.TopicName) (Topic, error) {
 		subscribers:  sync.Map{},
 		newMessageCh: make(chan vos.Message),
 		newSubCh:     make(chan Subscriber),
-		killSubCh:    make(chan string),
+		killSubCh:    make(chan vos.SubscriberID),
 	}, nil
 }
 
@@ -49,7 +49,7 @@ func (t topic) AddSubscriber(sub Subscriber) {
 	t.newSubCh <- sub
 }
 
-func (t topic) RemoveSubscriber(subscriberID string) {
+func (t topic) RemoveSubscriber(subscriberID vos.SubscriberID) {
 	t.killSubCh <- subscriberID
 }
 

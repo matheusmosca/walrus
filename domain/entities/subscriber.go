@@ -7,20 +7,20 @@ import (
 )
 
 type subscriber struct {
-	id             string
+	id             vos.SubscriberID
 	subscriptionCh chan vos.Message
 	topic          Topic
 }
 
 type Subscriber interface {
-	GetID() string
+	GetID() vos.SubscriberID
 	ReceiveMessage(vos.Message)
-	Subscribe() (chan vos.Message, string)
+	Subscribe() (chan vos.Message, vos.SubscriberID)
 }
 
 func NewSubscriber(topic Topic) Subscriber {
 	sub := subscriber{
-		id:             uuid.NewString(),
+		id:             vos.SubscriberID(uuid.NewString()),
 		subscriptionCh: make(chan vos.Message),
 		topic:          topic,
 	}
@@ -28,7 +28,7 @@ func NewSubscriber(topic Topic) Subscriber {
 	return sub
 }
 
-func (s subscriber) Subscribe() (chan vos.Message, string) {
+func (s subscriber) Subscribe() (chan vos.Message, vos.SubscriberID) {
 	s.topic.AddSubscriber(s)
 	return s.subscriptionCh, s.GetID()
 }
@@ -37,6 +37,6 @@ func (s subscriber) ReceiveMessage(msg vos.Message) {
 	s.subscriptionCh <- msg
 }
 
-func (s subscriber) GetID() string {
+func (s subscriber) GetID() vos.SubscriberID {
 	return s.id
 }

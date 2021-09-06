@@ -21,8 +21,8 @@ type Repository interface {
 
 type UseCase interface {
 	Publish(ctx context.Context, message vos.Message) error
-	Unsubscribe(ctx context.Context, subscriberID string, topicName vos.TopicName) error
-	Subscribe(ctx context.Context, topicName vos.TopicName) (chan vos.Message, string, error)
+	Unsubscribe(ctx context.Context, subscriberID vos.SubscriberID, topicName vos.TopicName) error
+	Subscribe(ctx context.Context, topicName vos.TopicName) (chan vos.Message, vos.SubscriberID, error)
 }
 
 func New(storage Repository) UseCase {
