@@ -1,3 +1,3 @@
-# walrus :construction: under developent :construction:
+<h1 align="center">Walrus</h1>
 
-Walrus is notification platform to publish and consume messages within a related dispatcher
+<h3 align="center">Real-time event streaming platform built on top of gRPC streams</h3>
