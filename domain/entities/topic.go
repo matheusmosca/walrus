@@ -1,20 +1,24 @@
 package entities
 
-import "github.com/matheusmosca/walrus/domain/vos"
+import (
+	"sync"
+
+	"github.com/matheusmosca/walrus/domain/vos"
+)
 
 type topic struct {
-	name        vos.TopicName
-	subscribers []Subscriber
-	newMessage  chan vos.Message
-	newSub      chan Subscriber
+	name         vos.TopicName
+	subscribers  sync.Map
+	newMessageCh chan vos.Message
+	killSubCh    chan string
+	newSubCh     chan Subscriber
 }
 
 type Topic interface {
-	AddSubscriber(Subscriber)
-	// TODO RemoveSubscriber
-	// RemoveSubscriber(Subscriber)
-	Dispatch(vos.Message)
 	Activate()
+	Dispatch(vos.Message)
+	AddSubscriber(Subscriber)
+	RemoveSubscriber(subscriberID string)
 }
 
 func NewTopic(topicName vos.TopicName) (Topic, error) {
@@ -23,38 +27,57 @@ func NewTopic(topicName vos.TopicName) (Topic, error) {
 	}
 
 	return topic{
-		name:        topicName,
-		subscribers: []Subscriber{},
-		newMessage:  make(chan vos.Message),
-		newSub:      make(chan Subscriber),
+		name:         topicName,
+		subscribers:  sync.Map{},
+		newMessageCh: make(chan vos.Message),
+		newSubCh:     make(chan Subscriber),
+		killSubCh:    make(chan string),
 	}, nil
-}
-
-func (t topic) AddSubscriber(sub Subscriber) {
-	t.newSub <- sub
-}
-
-func (t topic) Dispatch(message vos.Message) {
-	t.newMessage <- message
 }
 
 func (t topic) Activate() {
 	go t.listenForSubscriptions()
 	go t.listenForMessages()
+	go t.listenForKills()
 }
 
-func (t *topic) listenForMessages() {
-	for msg := range t.newMessage {
-		m := msg
+func (t topic) Dispatch(message vos.Message) {
+	t.newMessageCh <- message
+}
 
-		for _, sub := range t.subscribers {
-			sub.ReceiveMessage(m)
-		}
-	}
+func (t topic) AddSubscriber(sub Subscriber) {
+	t.newSubCh <- sub
+}
+
+func (t topic) RemoveSubscriber(subscriberID string) {
+	t.killSubCh <- subscriberID
 }
 
 func (t *topic) listenForSubscriptions() {
-	for newSub := range t.newSub {
-		t.subscribers = append(t.subscribers, newSub)
+	for newSubCh := range t.newSubCh {
+		t.subscribers.Store(newSubCh.GetID(), newSubCh)
+	}
+}
+
+func (t *topic) listenForKills() {
+	for subscriberID := range t.killSubCh {
+		t.subscribers.Delete(subscriberID)
+	}
+}
+
+func (t *topic) listenForMessages() {
+	for msg := range t.newMessageCh {
+		m := msg
+
+		t.subscribers.Range(func(key, value interface{}) bool {
+			if key == nil || value == nil {
+				return false
+			}
+			if subscriber, ok := value.(Subscriber); ok {
+				subscriber.ReceiveMessage(m)
+			}
+
+			return true
+		})
 	}
 }
