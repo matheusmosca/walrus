@@ -1,3 +1,23 @@
+.PHONY: run-server
+run-server:
+ifeq (, $(wildcard ./build/server))
+	@echo "server binary not found, trying to compile it.."
+	make compile
+endif
+	@./build/server
+
+.PHONY: compile
+compile:
+	@echo "=> installing dependencies..."
+	go mod tidy
+	@echo "==> Compiling walrus..."
+	go build -o build/server cmd/server/v1/main.go
+
+.PHONY: test
+test:
+	@echo "==> Running tests..."
+	go test ./... --race -v 
+
 .PHONY: compile-proto
 compile-proto:
 	@echo "==> Checking buf dependencies..."
