@@ -1,7 +1,7 @@
-<h3 align="center">Walrus</h3>
-<p align="center">
-  Real-time event streaming platform built on top of gRPC streams
-</p>
+<h1 align="center">Walrus</h1>
+<h3 align="center">
+  :clock2: Real-time event streaming platform built on top of gRPC streams
+</h3>
 
 <details open="open">
   <summary>Table of Contents</summary>
@@ -9,15 +9,15 @@
     <li>
       <a href="#about-the-project">About the project</a>
       <ul>
-        <li><a href="#how-it-works">How it works</a></li>
         <li><a href="#built-with">Built With</a></li>
+        <li><a href="#how-it-works">How it works</a></li>
       </ul>
     </li>
     <li>
       <a href="#getting-started">Getting Started</a>
       <ul>
         <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#how-to-run">How to run and useful commands</a></li>
+        <li><a href="#how-to-run">How to run</a></li>
         <li><a href="#testing">Testing</a></li>
       </ul>
     </li>
@@ -28,7 +28,10 @@
 
 ## About the Project
 
-TODO
+### Built With
+
+* [Go](https://golang.org/)
+* [gRPC](https://grpc.io/)
 
 ### How it works
 
@@ -36,13 +39,6 @@ Walrus uses pub/sub pattern to allow applications to subscribe to specific topic
 
 ![walrus pub/sub architecture explained](.github/images/walrus-architecture-explained.png)
 
-
-### Built With
-
-* [Go](https://golang.org/)
-* [gRPC](https://grpc.io/)
-
-<!-- GETTING STARTED -->
 ## Getting Started
 
 All you should know to run Walrus locally.
