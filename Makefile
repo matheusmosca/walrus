@@ -1,9 +1,6 @@
 .PHONY: run-server
-run-server:
-ifeq (, $(wildcard ./build/server))
-	@echo "server binary not found, trying to compile it.."
-	make compile
-endif
+run-server: compile
+	@echo "===> starting server..."
 	@./build/server
 
 .PHONY: compile
