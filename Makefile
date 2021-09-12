@@ -16,7 +16,15 @@ compile:
 .PHONY: test
 test:
 	@echo "==> Running tests..."
-	go test ./... --race -v 
+	go test ./... --race -v
+
+.PHONY: lint
+lint:
+ifeq (, $(shell which $$(go env GOPATH)/bin/golangci-lint))
+	@echo "==> golangci-lint not installed, trying to install it..."
+	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.42.1
+endif
+	$$(go env GOPATH)/bin/golangci-lint run -c ./.golangci.yml ./...
 
 .PHONY: compile-proto
 compile-proto:
