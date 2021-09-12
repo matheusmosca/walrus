@@ -16,7 +16,7 @@ compile:
 .PHONY: test
 test:
 	@echo "==> Running tests..."
-	go test ./... --race -v
+	go test ./... --race -count=1 -v
 
 .PHONY: lint
 lint:
