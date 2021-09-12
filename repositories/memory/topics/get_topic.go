@@ -10,7 +10,7 @@ import (
 func (r repository) GetTopic(ctx context.Context, topicName vos.TopicName) (entities.Topic, error) {
 	topic, ok := r.storage[topicName]
 	if !ok {
-		return nil, entities.ErrTopicNotFound
+		return entities.Topic{}, entities.ErrTopicNotFound
 	}
 
 	return topic, nil

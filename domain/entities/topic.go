@@ -6,7 +6,7 @@ import (
 	"github.com/matheusmosca/walrus/domain/vos"
 )
 
-type topic struct {
+type Topic struct {
 	name         vos.TopicName
 	subscribers  *sync.Map
 	newMessageCh chan vos.Message
@@ -14,19 +14,12 @@ type topic struct {
 	newSubCh     chan Subscriber
 }
 
-type Topic interface {
-	Activate()
-	Dispatch(vos.Message)
-	AddSubscriber(Subscriber)
-	RemoveSubscriber(vos.SubscriberID)
-}
-
 func NewTopic(topicName vos.TopicName) (Topic, error) {
 	if err := topicName.Validate(); err != nil {
-		return nil, err
+		return Topic{}, err
 	}
 
-	return topic{
+	return Topic{
 		name:         topicName,
 		subscribers:  &sync.Map{},
 		newMessageCh: make(chan vos.Message),
@@ -35,37 +28,37 @@ func NewTopic(topicName vos.TopicName) (Topic, error) {
 	}, nil
 }
 
-func (t topic) Activate() {
+func (t Topic) Activate() {
 	go t.listenForSubscriptions()
 	go t.listenForMessages()
 	go t.listenForKills()
 }
 
-func (t topic) Dispatch(message vos.Message) {
+func (t Topic) Dispatch(message vos.Message) {
 	t.newMessageCh <- message
 }
 
-func (t topic) AddSubscriber(sub Subscriber) {
-	t.newSubCh <- sub
-}
-
-func (t topic) RemoveSubscriber(subscriberID vos.SubscriberID) {
+func (t Topic) RemoveSubscriber(subscriberID vos.SubscriberID) {
 	t.killSubCh <- subscriberID
 }
 
-func (t *topic) listenForSubscriptions() {
+func (t Topic) addSubscriber(sub Subscriber) {
+	t.newSubCh <- sub
+}
+
+func (t *Topic) listenForSubscriptions() {
 	for newSubCh := range t.newSubCh {
 		t.subscribers.Store(newSubCh.GetID(), newSubCh)
 	}
 }
 
-func (t *topic) listenForKills() {
+func (t *Topic) listenForKills() {
 	for subscriberID := range t.killSubCh {
 		t.subscribers.Delete(subscriberID)
 	}
 }
 
-func (t *topic) listenForMessages() {
+func (t *Topic) listenForMessages() {
 	for msg := range t.newMessageCh {
 		m := msg
 
