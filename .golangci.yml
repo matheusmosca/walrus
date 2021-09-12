@@ -7,11 +7,9 @@ linters:
   enable:
     - megacheck
     - govet
-    - cyclop
     - dogsled
     - dupl
     - errcheck
-    - errorlint
     - exhaustive
     - gocognit
     - nestif
@@ -29,21 +27,11 @@ output:
   format: 'colored-line-number'
 
 linters-settings:
-  cyclop:
-    max-complexity: 10
-    package-average: 0.0
-    skip-tests: false
-
   dogsled:
     max-blank-identifiers: 2
 
   dupl:
     threshold: 100
-
-  errorlint:
-    errorf: true
-    asserts: true
-    comparison: true
 
   exhaustive:
     check-generated: false
