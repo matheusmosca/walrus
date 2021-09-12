@@ -43,5 +43,5 @@ func main() {
 	pb.RegisterWalrusServer(server, rpcMethods)
 
 	logEntry.Infof("starting server on %s:%s", config.Host, config.Port)
-	server.Serve(lis)
+	logEntry.Fatal(server.Serve(lis))
 }

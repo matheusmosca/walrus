@@ -8,7 +8,7 @@ import (
 
 type topic struct {
 	name         vos.TopicName
-	subscribers  sync.Map
+	subscribers  *sync.Map
 	newMessageCh chan vos.Message
 	killSubCh    chan vos.SubscriberID
 	newSubCh     chan Subscriber
@@ -28,7 +28,7 @@ func NewTopic(topicName vos.TopicName) (Topic, error) {
 
 	return topic{
 		name:         topicName,
-		subscribers:  sync.Map{},
+		subscribers:  &sync.Map{},
 		newMessageCh: make(chan vos.Message),
 		newSubCh:     make(chan Subscriber),
 		killSubCh:    make(chan vos.SubscriberID),
