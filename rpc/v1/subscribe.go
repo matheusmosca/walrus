@@ -18,8 +18,9 @@ func (r RPC) Subscribe(req *pb.SubscribeRequest, stream pb.Walrus_SubscribeServe
 	subscriptionCh, subscriberID, err := r.useCase.Subscribe(stream.Context(), vos.TopicName(req.Topic))
 	if err != nil {
 		log.WithError(err).Error("could not handle subscribe request")
-		return err
+		return injectStatusCode(err)
 	}
+
 	defer close(subscriptionCh)
 	log.Info("subscription request has been completed successfully, starting to receive messages")
 
@@ -35,18 +36,20 @@ func (r RPC) Subscribe(req *pb.SubscribeRequest, stream pb.Walrus_SubscribeServe
 			}
 			log := log.WithField("published_by", msg.PublishedBy)
 			log.Info("new message published, starting to send it to subscriber")
+
 			if err := stream.Send(res); err != nil {
 				log.WithError(err).Error("could not send message to subscriber")
-				return err
+				return injectStatusCode(err)
 			}
 
 			log.Info("message has been sent successfully")
 		case <-stream.Context().Done():
 			log.Info("subscription stream has been closed, starting to unsubscribe")
+
 			err := r.useCase.Unsubscribe(stream.Context(), subscriberID, vos.TopicName(req.Topic))
 			if err != nil {
 				log.WithError(err).Error("something went wrong trying to unsubscribe")
-				return err
+				return injectStatusCode(err)
 			}
 
 			log.Info("unsubscribed successfully")
