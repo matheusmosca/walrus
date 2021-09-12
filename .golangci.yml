@@ -1,0 +1,91 @@
+run:
+  deadline: 5m
+  timeout: 5m
+  tests: true
+
+linters:
+  enable:
+    - megacheck
+    - govet
+    - cyclop
+    - dogsled
+    - dupl
+    - errcheck
+    - errorlint
+    - exhaustive
+    - gocognit
+    - nestif
+    - gocyclo
+    - gofmt
+    - gosec
+    - gosimple
+    - misspell
+    - unused
+  disable:
+    - maligned
+    - prealloc
+
+output:
+  format: 'colored-line-number'
+
+linters-settings:
+  cyclop:
+    max-complexity: 10
+    package-average: 0.0
+    skip-tests: false
+
+  dogsled:
+    max-blank-identifiers: 2
+
+  dupl:
+    threshold: 100
+
+  errorlint:
+    errorf: true
+    asserts: true
+    comparison: true
+
+  exhaustive:
+    check-generated: false
+    default-signifies-exhaustive: false
+
+  gocognit:
+    min-complexity: 10
+
+  nestif:
+    min-complexity: 4
+
+  gocyclo:
+    min-complexity: 20
+
+  gofmt:
+    simplify: true
+
+  gosec:
+    includes:
+      - G401
+      - G306
+      - G101
+    config:
+      G306: "0600"
+      G101:
+        pattern: "(?i)example"
+        ignore_entropy: false
+        entropy_threshold: "80.0"
+        per_char_threshold: "3.0"
+        truncate: "32"
+
+  gosimple:
+    go: "1.16"
+    checks: [ "all" ]
+
+  govet:
+    check-shadowing: false
+
+  misspell:
+    locale: US
+    # ignore-words:
+    #   - someword
+
+  unused:
+    go: "1.16"
