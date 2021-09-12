@@ -29,7 +29,7 @@ func (r RPC) Publish(ctx context.Context, req *pb.PublishRequest) (*emptypb.Empt
 	err := r.useCase.Publish(ctx, msg)
 	if err != nil {
 		log.WithError(err).Error("could not handle publish request")
-		return nil, err
+		return nil, injectStatusCode(err)
 	}
 	log.Info("message has been published successfully")
 
