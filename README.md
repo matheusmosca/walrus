@@ -50,6 +50,8 @@ All you should know to run Walrus locally.
 
 ### How to run
 
+#### Locally
+
 1. Clone the repo
    ```bash
    git clone https://github.com/matheusmosca/walrus.git
@@ -58,6 +60,27 @@ All you should know to run Walrus locally.
    ```bash
    make run-server
    ```
+
+#### Docker
+
+1. Build image
+   ```bash
+   docker build --tag walrus .
+   ```
+1. Run the server in a container exposing the default port
+   ```bash
+   docker run -d --name walrus-test --publish 3000:3000 walrus
+   ```
+1. See the logs live
+   ```bash
+   docker logs --follow walrus-test
+   ```
+1. To stop the container run
+   ```bash
+   docker stop walrus-test
+   ```
+
+You can test the server running the examples, first the subscriber, then the publisher.
 
 ### Testing
 
