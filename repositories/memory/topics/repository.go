@@ -2,6 +2,7 @@ package topics
 
 import (
 	"context"
+	"sync"
 
 	"github.com/matheusmosca/walrus/domain/entities"
 	"github.com/matheusmosca/walrus/domain/vos"
@@ -9,6 +10,7 @@ import (
 
 type repository struct {
 	storage map[vos.TopicName]entities.Topic
+	mu      sync.Mutex
 }
 
 type MemoryRepository interface {
@@ -17,7 +19,7 @@ type MemoryRepository interface {
 }
 
 func NewMemoryRepository(storage map[vos.TopicName]entities.Topic) MemoryRepository {
-	return repository{
+	return &repository{
 		storage: storage,
 	}
 }
