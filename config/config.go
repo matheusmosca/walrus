@@ -4,7 +4,7 @@ import "github.com/kelseyhightower/envconfig"
 
 type Config struct {
 	AppName     string `envconfig:"APP_NAME" default:"walrus"`
-	Host        string `envconfig:"HOST" default:"localhost"`
+	Host        string `envconfig:"HOST" default:"0.0.0.0"`
 	Port        string `envconfig:"PORT" default:"3000"`
 	Environment string `envconfig:"ENVIRONMENT" default:"dev"`
 }
