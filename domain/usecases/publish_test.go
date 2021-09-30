@@ -79,7 +79,7 @@ func Test_useCase_publish(t *testing.T) {
 				ch, _ := subscriber.Subscribe()
 				return ch
 			},
-			want: nil,
+			want:    nil,
 			wantErr: vos.ErrTopicNameTooShort,
 		},
 		{
@@ -103,7 +103,7 @@ func Test_useCase_publish(t *testing.T) {
 				ch, _ := subscriber.Subscribe()
 				return ch
 			},
-			want: nil,
+			want:    nil,
 			wantErr: vos.ErrEmptyTopicName,
 		},
 		{
@@ -127,7 +127,7 @@ func Test_useCase_publish(t *testing.T) {
 				ch, _ := subscriber.Subscribe()
 				return ch
 			},
-			want: nil,
+			want:    nil,
 			wantErr: vos.ErrEmptyPublishedBy,
 		},
 		{
@@ -151,7 +151,7 @@ func Test_useCase_publish(t *testing.T) {
 				ch, _ := subscriber.Subscribe()
 				return ch
 			},
-			want: nil,
+			want:    nil,
 			wantErr: vos.ErrPublishedByTooShort,
 		},
 		{
@@ -175,7 +175,7 @@ func Test_useCase_publish(t *testing.T) {
 				ch, _ := subscriber.Subscribe()
 				return ch
 			},
-			want: nil,
+			want:    nil,
 			wantErr: entities.ErrTopicNotFound,
 		},
 	}
