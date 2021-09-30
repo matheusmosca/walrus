@@ -14,6 +14,7 @@ type useCase struct {
 	topics  topics
 }
 
+//go:generate moq -fmt goimports -out repository_mock.go . Repository:RepositoryMock
 type Repository interface {
 	CreateTopic(ctx context.Context, name vos.TopicName, topic entities.Topic) error
 	GetTopic(ctx context.Context, topicName vos.TopicName) (entities.Topic, error)
