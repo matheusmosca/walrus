@@ -17,7 +17,6 @@ func TestGetTopic(t *testing.T) {
 		description string
 		args        args
 		beforeRun   func(storage map[vos.TopicName]entities.Topic)
-		wantErr     error
 	}
 
 	// positiveTestcase creates a topic and stores it in the repository.storage as a part of its beforeRun routine
@@ -33,7 +32,6 @@ func TestGetTopic(t *testing.T) {
 				topic, _ := entities.NewTopic(topicName)
 				storage[topicName] = topic
 			},
-			wantErr: entities.ErrTopicAlreadyExists,
 		},
 	}
 
@@ -66,7 +64,6 @@ func TestGetTopic(t *testing.T) {
 			},
 			beforeRun: func(storage map[vos.TopicName]entities.Topic) {
 			},
-			wantErr: entities.ErrTopicAlreadyExists,
 		},
 	}
 
