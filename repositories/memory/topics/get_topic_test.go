@@ -56,7 +56,7 @@ func TestGetTopic_Success(t *testing.T) {
 	}
 }
 
-func TestGetTopic_Negative(t *testing.T) {
+func TestGetTopic_Failure(t *testing.T) {
 	type args struct {
 		topicName vos.TopicName
 	}
