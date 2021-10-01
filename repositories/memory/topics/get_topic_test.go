@@ -2,11 +2,11 @@ package topics
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/matheusmosca/walrus/domain/entities"
 	"github.com/matheusmosca/walrus/domain/vos"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -65,7 +65,6 @@ func TestGetTopic_Negative(t *testing.T) {
 		args        args
 		beforeRun   func(storage map[vos.TopicName]entities.Topic)
 		wantErr     error
-		want        vos.TopicName
 	}
 
 	tests := []testCase{
