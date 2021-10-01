@@ -2,7 +2,6 @@ package usecases
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -29,7 +28,7 @@ func TestListTopics(t *testing.T) {
 		fields    fields
 		beforeRun func(topic entities.Topic) chan vos.Message
 		want      []vos.TopicName
-		wantErr   bool
+		wantErr   error
 	}{
 		{
 			name: "list topics should success",
@@ -45,22 +44,8 @@ func TestListTopics(t *testing.T) {
 					},
 				},
 			},
-			want: []vos.TopicName{"walrus", "walrus2"},
-		},
-		{
-			name: "should returns error to list topics",
-			args: args{
-				ctx: context.Background(),
-			},
-			fields: fields{
-				storage: &RepositoryMock{
-					ListTopicsFunc: func(ctx context.Context) ([]entities.Topic, error) {
-						return nil, errors.New("wrong")
-					},
-				},
-			},
-			want:    nil,
-			wantErr: true,
+			want:    []vos.TopicName{"walrus", "walrus2"},
+			wantErr: nil,
 		},
 		{
 			name: "no topics in storage topic should returns error",
@@ -75,7 +60,7 @@ func TestListTopics(t *testing.T) {
 				},
 			},
 			want:    nil,
-			wantErr: true,
+			wantErr: entities.ErrNoTopicsFound,
 		},
 	}
 	for _, tt := range tests {
@@ -85,8 +70,8 @@ func TestListTopics(t *testing.T) {
 
 			useCase := New(tt.fields.storage)
 			topics, err := useCase.ListTopics(tt.args.ctx)
-			if tt.wantErr {
-				assert.Error(t, err)
+			if tt.wantErr != nil {
+				assert.ErrorIs(t, err, tt.wantErr)
 				assert.Empty(t, topics)
 				return
 			}
