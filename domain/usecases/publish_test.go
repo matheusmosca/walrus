@@ -193,6 +193,7 @@ func Test_useCase_publish(t *testing.T) {
 
 			// subscribe in the topic
 			subsCh := tt.beforeRun(topic)
+			defer close(subsCh)
 
 			tt.fields.storage = &RepositoryMock{
 				GetTopicFunc: func(ctx context.Context, topicName vos.TopicName) (entities.Topic, error) {
@@ -208,7 +209,7 @@ func Test_useCase_publish(t *testing.T) {
 			err = useCase.Publish(tt.args.ctx, tt.args.message)
 			if err != nil {
 				assert.ErrorIs(t, err, tt.wantErr)
-				close(subsCh)
+				return
 			}
 
 			actualMsg := <-subsCh
