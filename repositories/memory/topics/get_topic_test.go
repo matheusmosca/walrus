@@ -10,17 +10,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type args struct {
-	topicName vos.TopicName
-}
-type testCase struct {
-	description string
-	args        args
-	beforeRun   func(storage map[vos.TopicName]entities.Topic)
-	wantErr     error
-}
-
 func TestGetTopic_Success(t *testing.T) {
+	type args struct {
+		topicName vos.TopicName
+	}
+	type testCase struct {
+		description string
+		args        args
+		beforeRun   func(storage map[vos.TopicName]entities.Topic)
+		wantErr     error
+	}
+
 	tests := []testCase{
 		{
 			description: "The first positive topic",
@@ -50,13 +50,23 @@ func TestGetTopic_Success(t *testing.T) {
 			repository := NewMemoryRepository(storage)
 			getTopic, err := repository.GetTopic(context.TODO(), tt.args.topicName)
 
-			assert.ErrorIs(t, err, tt.wantErr)
 			assert.NotEmpty(t, getTopic)
+			assert.ErrorIs(t, err, tt.wantErr)
 		})
 	}
 }
 
 func TestGetTopic_Negative(t *testing.T) {
+	type args struct {
+		topicName vos.TopicName
+	}
+	type testCase struct {
+		description string
+		args        args
+		beforeRun   func(storage map[vos.TopicName]entities.Topic)
+		wantErr     error
+	}
+
 	tests := []testCase{
 		{
 			description: "The first negative topic",
