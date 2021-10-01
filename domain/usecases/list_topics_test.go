@@ -63,19 +63,19 @@ func TestListTopics(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "empty storage topic should success",
+			name: "no topics in storage topic should returns error",
 			args: args{
 				ctx: context.Background(),
 			},
 			fields: fields{
 				storage: &RepositoryMock{
 					ListTopicsFunc: func(ctx context.Context) ([]entities.Topic, error) {
-						return []entities.Topic{}, nil
+						return nil, entities.ErrNoTopicsFound
 					},
 				},
 			},
-			want:    []vos.TopicName{},
-			wantErr: false,
+			want:    nil,
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
@@ -87,6 +87,7 @@ func TestListTopics(t *testing.T) {
 			topics, err := useCase.ListTopics(tt.args.ctx)
 			if tt.wantErr {
 				assert.Error(t, err)
+				assert.Empty(t, topics)
 				return
 			}
 

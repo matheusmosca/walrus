@@ -13,5 +13,9 @@ func (r *repository) ListTopics(_ context.Context) ([]entities.Topic, error) {
 		topics = append(topics, topic)
 	}
 
+	if len(topics) < 1 {
+		return nil, entities.ErrNoTopicsFound
+	}
+
 	return topics, nil
 }
