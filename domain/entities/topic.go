@@ -74,3 +74,7 @@ func (t *Topic) listenForMessages() {
 		})
 	}
 }
+
+func (t Topic) GetName() vos.TopicName {
+	return t.name
+}

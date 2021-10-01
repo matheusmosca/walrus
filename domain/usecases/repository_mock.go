@@ -27,6 +27,9 @@ var _ Repository = &RepositoryMock{}
 // 			GetTopicFunc: func(ctx context.Context, topicName vos.TopicName) (entities.Topic, error) {
 // 				panic("mock out the GetTopic method")
 // 			},
+// 			ListTopicsFunc: func(ctx context.Context) ([]entities.Topic, error) {
+// 				panic("mock out the ListTopics method")
+// 			},
 // 		}
 //
 // 		// use mockedRepository in code that requires Repository
@@ -39,6 +42,9 @@ type RepositoryMock struct {
 
 	// GetTopicFunc mocks the GetTopic method.
 	GetTopicFunc func(ctx context.Context, topicName vos.TopicName) (entities.Topic, error)
+
+	// ListTopicsFunc mocks the ListTopics method.
+	ListTopicsFunc func(ctx context.Context) ([]entities.Topic, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -58,9 +64,15 @@ type RepositoryMock struct {
 			// TopicName is the topicName argument value.
 			TopicName vos.TopicName
 		}
+		// ListTopics holds details about calls to the ListTopics method.
+		ListTopics []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+		}
 	}
 	lockCreateTopic sync.RWMutex
 	lockGetTopic    sync.RWMutex
+	lockListTopics  sync.RWMutex
 }
 
 // CreateTopic calls CreateTopicFunc.
@@ -134,5 +146,36 @@ func (mock *RepositoryMock) GetTopicCalls() []struct {
 	mock.lockGetTopic.RLock()
 	calls = mock.calls.GetTopic
 	mock.lockGetTopic.RUnlock()
+	return calls
+}
+
+// ListTopics calls ListTopicsFunc.
+func (mock *RepositoryMock) ListTopics(ctx context.Context) ([]entities.Topic, error) {
+	if mock.ListTopicsFunc == nil {
+		panic("RepositoryMock.ListTopicsFunc: method is nil but Repository.ListTopics was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockListTopics.Lock()
+	mock.calls.ListTopics = append(mock.calls.ListTopics, callInfo)
+	mock.lockListTopics.Unlock()
+	return mock.ListTopicsFunc(ctx)
+}
+
+// ListTopicsCalls gets all the calls that were made to ListTopics.
+// Check the length with:
+//     len(mockedRepository.ListTopicsCalls())
+func (mock *RepositoryMock) ListTopicsCalls() []struct {
+	Ctx context.Context
+} {
+	var calls []struct {
+		Ctx context.Context
+	}
+	mock.lockListTopics.RLock()
+	calls = mock.calls.ListTopics
+	mock.lockListTopics.RUnlock()
 	return calls
 }
