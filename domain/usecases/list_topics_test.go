@@ -63,7 +63,7 @@ func TestListTopics(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "empty storage topic should sucess",
+			name: "empty storage topic should success",
 			args: args{
 				ctx: context.Background(),
 			},
