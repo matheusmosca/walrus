@@ -10,20 +10,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type args struct {
-	topicName vos.TopicName
-}
-type testCase struct {
-	description string
-	args        args
-	beforeRun   func(storage map[vos.TopicName]entities.Topic)
-	wantErr     error
-}
-
 func TestGetTopic_Success(t *testing.T) {
-	// positiveTestcase creates a topic and stores it in the repository.storage as a part of its beforeRun routine
-	// hence these test cases should run with positive results for GetTopic method
-	positiveTestcase := []testCase{
+	type args struct {
+		topicName vos.TopicName
+	}
+	type testCase struct {
+		description string
+		args        args
+		beforeRun   func(storage map[vos.TopicName]entities.Topic)
+		wantErr     error
+	}
+
+	tests := []testCase{
 		{
 			description: "The first positive topic",
 			args: args{
@@ -38,7 +36,7 @@ func TestGetTopic_Success(t *testing.T) {
 		},
 	}
 
-	for _, tt := range positiveTestcase {
+	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.description, func(t *testing.T) {
 			t.Parallel()
@@ -52,18 +50,25 @@ func TestGetTopic_Success(t *testing.T) {
 			repository := NewMemoryRepository(storage)
 			getTopic, err := repository.GetTopic(context.TODO(), tt.args.topicName)
 
-			if tt.wantErr == nil {
-				require.NoError(t, err)
-			}
+			assert.ErrorIs(t, err, tt.wantErr)
 			assert.NotEmpty(t, getTopic)
 		})
 	}
 }
 
 func TestGetTopic_Negative(t *testing.T) {
-	// negativeTestcase neither creates a topic nor stores it in the repository.storage as a part of its beforeRun routine
-	// hence these test cases should run with negative results for GetTopic method
-	negativeTestcase := []testCase{
+	type args struct {
+		topicName vos.TopicName
+	}
+	type testCase struct {
+		description string
+		args        args
+		beforeRun   func(storage map[vos.TopicName]entities.Topic)
+		wantErr     error
+		want        vos.TopicName
+	}
+
+	tests := []testCase{
 		{
 			description: "The first negative topic",
 			args: args{
@@ -75,7 +80,7 @@ func TestGetTopic_Negative(t *testing.T) {
 		},
 	}
 
-	for _, tt := range negativeTestcase {
+	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.description, func(t *testing.T) {
 			t.Parallel()
@@ -89,9 +94,7 @@ func TestGetTopic_Negative(t *testing.T) {
 			repository := NewMemoryRepository(storage)
 			getTopic, err := repository.GetTopic(context.TODO(), tt.args.topicName)
 
-			if tt.wantErr != nil {
-				assert.ErrorIs(t, err, tt.wantErr)
-			}
+			assert.ErrorIs(t, err, tt.wantErr)
 			assert.Empty(t, getTopic)
 		})
 	}
