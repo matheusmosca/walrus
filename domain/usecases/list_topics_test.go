@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/matheusmosca/walrus/domain/entities"
 	"github.com/matheusmosca/walrus/domain/vos"
@@ -55,12 +54,12 @@ func TestListTopics(t *testing.T) {
 			fields: fields{
 				storage: &RepositoryMock{
 					ListTopicsFunc: func(ctx context.Context) ([]entities.Topic, error) {
-						return nil, entities.ErrNoTopicsFound
+						return nil, entities.ErrTopicsNotFound
 					},
 				},
 			},
 			want:    nil,
-			wantErr: entities.ErrNoTopicsFound,
+			wantErr: entities.ErrTopicsNotFound,
 		},
 	}
 	for _, tt := range tests {
@@ -70,19 +69,14 @@ func TestListTopics(t *testing.T) {
 
 			useCase := New(tt.fields.storage)
 			topics, err := useCase.ListTopics(tt.args.ctx)
-			if tt.wantErr != nil {
-				assert.ErrorIs(t, err, tt.wantErr)
-				assert.Empty(t, topics)
-				return
-			}
 
-			require.NoError(t, err)
-			topicNames := make([]vos.TopicName, 0, len(tt.want))
+			var actualTopics []vos.TopicName
 			for _, topic := range topics {
-				topicNames = append(topicNames, topic.GetName())
+				actualTopics = append(actualTopics, topic.GetName())
 			}
 
-			assert.Equal(t, tt.want, topicNames)
+			assert.ErrorIs(t, err, tt.wantErr)
+			assert.Equal(t, tt.want, actualTopics)
 		})
 	}
 }
