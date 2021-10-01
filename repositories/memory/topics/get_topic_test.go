@@ -2,6 +2,7 @@ package topics
 
 import (
 	"context"
+	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/matheusmosca/walrus/domain/entities"
@@ -9,16 +10,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetTopic(t *testing.T) {
-	type args struct {
-		topicName vos.TopicName
-	}
-	type testCase struct {
-		description string
-		args        args
-		beforeRun   func(storage map[vos.TopicName]entities.Topic)
-	}
+type args struct {
+	topicName vos.TopicName
+}
+type testCase struct {
+	description string
+	args        args
+	beforeRun   func(storage map[vos.TopicName]entities.Topic)
+	wantErr     error
+}
 
+func TestGetTopic_Success(t *testing.T) {
 	// positiveTestcase creates a topic and stores it in the repository.storage as a part of its beforeRun routine
 	// hence these test cases should run with positive results for GetTopic method
 	positiveTestcase := []testCase{
@@ -32,6 +34,7 @@ func TestGetTopic(t *testing.T) {
 				topic, _ := entities.NewTopic(topicName)
 				storage[topicName] = topic
 			},
+			wantErr: nil,
 		},
 	}
 
@@ -44,15 +47,20 @@ func TestGetTopic(t *testing.T) {
 
 			newTopic, err := entities.NewTopic(tt.args.topicName)
 			require.NoError(t, err)
-			require.NotEqual(t, newTopic, entities.Topic{})
+			require.NotEmpty(t, newTopic)
 
 			repository := NewMemoryRepository(storage)
 			getTopic, err := repository.GetTopic(context.TODO(), tt.args.topicName)
 
-			require.NoError(t, err)
-			require.NotEqual(t, getTopic, entities.Topic{})
+			if tt.wantErr == nil {
+				require.NoError(t, err)
+			}
+			assert.NotEmpty(t, getTopic)
 		})
 	}
+}
+
+func TestGetTopic_Negative(t *testing.T) {
 
 	// negativeTestcase neither creates a topic nor stores it in the repository.storage as a part of its beforeRun routine
 	// hence these test cases should run with negative results for GetTopic method
@@ -64,6 +72,7 @@ func TestGetTopic(t *testing.T) {
 			},
 			beforeRun: func(storage map[vos.TopicName]entities.Topic) {
 			},
+			wantErr: entities.ErrTopicNotFound,
 		},
 	}
 
@@ -76,13 +85,15 @@ func TestGetTopic(t *testing.T) {
 
 			newTopic, err := entities.NewTopic(tt.args.topicName)
 			require.NoError(t, err)
-			require.NotEqual(t, newTopic, entities.Topic{})
+			assert.NotEmpty(t, newTopic)
 
 			repository := NewMemoryRepository(storage)
 			getTopic, err := repository.GetTopic(context.TODO(), tt.args.topicName)
 
-			require.Equal(t, err, entities.ErrTopicNotFound)
-			require.Equal(t, getTopic, entities.Topic{})
+			if tt.wantErr != nil {
+				assert.ErrorIs(t, err, tt.wantErr)
+			}
+			assert.Empty(t, getTopic)
 		})
 	}
 }
