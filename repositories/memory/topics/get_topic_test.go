@@ -61,7 +61,6 @@ func TestGetTopic_Success(t *testing.T) {
 }
 
 func TestGetTopic_Negative(t *testing.T) {
-
 	// negativeTestcase neither creates a topic nor stores it in the repository.storage as a part of its beforeRun routine
 	// hence these test cases should run with negative results for GetTopic method
 	negativeTestcase := []testCase{
