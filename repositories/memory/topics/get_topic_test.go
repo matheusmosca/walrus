@@ -69,7 +69,7 @@ func TestGetTopic_Negative(t *testing.T) {
 
 	tests := []testCase{
 		{
-			description: "The first negative topic",
+			description: "should return an error when topic is not found",
 			args: args{
 				topicName: vos.TopicName("neg_topic_1"),
 			},
