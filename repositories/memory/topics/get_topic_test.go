@@ -23,7 +23,7 @@ func TestGetTopic_Success(t *testing.T) {
 
 	tests := []testCase{
 		{
-			description: "The first positive topic",
+			description: "should return a topic without error",
 			args: args{
 				topicName: vos.TopicName("pos_topic_1"),
 			},
