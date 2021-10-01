@@ -12,7 +12,7 @@ import (
 	"github.com/matheusmosca/walrus/domain/vos"
 )
 
-func Test_useCase_publish(t *testing.T) {
+func TestPublish(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
@@ -207,11 +207,12 @@ func Test_useCase_publish(t *testing.T) {
 
 			useCase := New(tt.fields.storage)
 			err = useCase.Publish(tt.args.ctx, tt.args.message)
-			if err != nil {
+			if tt.wantErr != nil {
 				assert.ErrorIs(t, err, tt.wantErr)
 				return
 			}
 
+			assert.NoError(t, err)
 			actualMsg := <-subsCh
 			require.Equal(t, tt.want, actualMsg.Body)
 		})
