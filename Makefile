@@ -18,7 +18,7 @@ test:
 .PHONY: test-coverage
 test-coverage:
 	@echo "==> Running tests..."
-	go test -failfast -coverprofile=coverage.out ./...
+	go test -failfast --race -count=1 -coverprofile=coverage.out ./...
 	go tool cover -html=coverage.out -o coverage.html
 
 .PHONY: lint
