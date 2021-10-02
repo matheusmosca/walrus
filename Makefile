@@ -15,6 +15,12 @@ test:
 	@echo "==> Running tests..."
 	go test ./... --race -count=1 -v
 
+.PHONY: test-coverage
+test-coverage:
+	@echo "==> Running tests..."
+	go test -failfast -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out -o coverage.html
+
 .PHONY: lint
 lint:
 ifeq (, $(shell which $$(go env GOPATH)/bin/golangci-lint))
