@@ -34,8 +34,14 @@ func (t Topic) Activate() {
 	go t.listenForKills()
 }
 
-func (t Topic) Dispatch(message vos.Message) {
+func (t Topic) Dispatch(message vos.Message) error {
+	if message.TopicName != t.name {
+		return ErrTopicNameDoesNotMatch
+	}
+
 	t.newMessageCh <- message
+
+	return nil
 }
 
 func (t Topic) RemoveSubscriber(subscriberID vos.SubscriberID) {

@@ -4,9 +4,10 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/matheusmosca/walrus/domain/vos"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/matheusmosca/walrus/domain/vos"
 )
 
 func TestNewTopic(t *testing.T) {
@@ -59,12 +60,14 @@ func TestDispatch(t *testing.T) {
 		description         string
 		messages            []vos.Message
 		numberOfSubscribers int
+		wantError           error
 	}
 
 	tests := []testCase{
 		{
 			description:         "should dispatch the messages to all subscribers successfully",
 			numberOfSubscribers: 5,
+			wantError:           nil,
 			messages: []vos.Message{
 				{
 					TopicName:   vos.TopicName("test-topic"),
@@ -83,6 +86,28 @@ func TestDispatch(t *testing.T) {
 				},
 			},
 		},
+		{
+			description:         "should returns error when message does not belong to this topic",
+			numberOfSubscribers: 5,
+			wantError:           ErrTopicNameDoesNotMatch,
+			messages: []vos.Message{
+				{
+					TopicName:   vos.TopicName("test-topic2"),
+					PublishedBy: "first-publisher",
+					Body:        []byte("{\"name\": \"Jorge\"}"),
+				},
+				{
+					TopicName:   vos.TopicName("test-topic3"),
+					PublishedBy: "second-publisher",
+					Body:        []byte("{\"book\": \"And then there were none\"}"),
+				},
+				{
+					TopicName:   vos.TopicName("test-topic4"),
+					PublishedBy: "third-publisher",
+					Body:        []byte("{\"age\": \"12\"}"),
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -90,7 +115,7 @@ func TestDispatch(t *testing.T) {
 		t.Run(tt.description, func(t *testing.T) {
 			t.Parallel()
 
-			topic, err := NewTopic(vos.TopicName("test-topic"))
+			topic, err := NewTopic("test-topic")
 			require.Nil(t, err)
 			topic.Activate()
 
@@ -101,10 +126,16 @@ func TestDispatch(t *testing.T) {
 			}
 
 			wg.Wait()
-			for _, msg := range tt.messages {
-				topic.Dispatch(msg)
-			}
+
+			assertDispatchMessages(t, topic, tt.messages, tt.wantError)
 		})
+	}
+}
+
+func assertDispatchMessages(t *testing.T, topic Topic, messages []vos.Message, wantErr error) {
+	for _, msg := range messages {
+		err := topic.Dispatch(msg)
+		assert.ErrorIs(t, err, wantErr)
 	}
 }
 
