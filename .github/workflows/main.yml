@@ -38,7 +38,7 @@ jobs:
       run: go mod tidy
 
     - name: Test
-      run: make test
+      run: make test-coverage
 
   golangci:
     name: lint
