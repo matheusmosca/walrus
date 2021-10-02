@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/matheusmosca/walrus/domain/entities"
 	"github.com/matheusmosca/walrus/domain/vos"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestGetTopic_Success(t *testing.T) {
@@ -18,6 +18,7 @@ func TestGetTopic_Success(t *testing.T) {
 		description string
 		args        args
 		beforeRun   func(storage map[vos.TopicName]entities.Topic)
+		want        vos.TopicName
 		wantErr     error
 	}
 
@@ -25,13 +26,14 @@ func TestGetTopic_Success(t *testing.T) {
 		{
 			description: "should return a topic without error",
 			args: args{
-				topicName: vos.TopicName("pos_topic_1"),
+				topicName: vos.TopicName("topic1"),
 			},
 			beforeRun: func(storage map[vos.TopicName]entities.Topic) {
-				topicName := vos.TopicName("pos_topic_1")
+				topicName := vos.TopicName("topic1")
 				topic, _ := entities.NewTopic(topicName)
 				storage[topicName] = topic
 			},
+			want:    vos.TopicName("topic1"),
 			wantErr: nil,
 		},
 	}
@@ -40,18 +42,15 @@ func TestGetTopic_Success(t *testing.T) {
 		tt := tt
 		t.Run(tt.description, func(t *testing.T) {
 			t.Parallel()
+
 			storage := make(map[vos.TopicName]entities.Topic)
 			tt.beforeRun(storage)
-
-			newTopic, err := entities.NewTopic(tt.args.topicName)
-			require.NoError(t, err)
-			require.NotEmpty(t, newTopic)
-
 			repository := NewMemoryRepository(storage)
-			getTopic, err := repository.GetTopic(context.TODO(), tt.args.topicName)
 
-			assert.NotEmpty(t, getTopic)
+			got, err := repository.GetTopic(context.TODO(), tt.args.topicName)
 			assert.ErrorIs(t, err, tt.wantErr)
+
+			assert.Equal(t, tt.want, got.GetName())
 		})
 	}
 }
@@ -63,7 +62,7 @@ func TestGetTopic_Failure(t *testing.T) {
 	type testCase struct {
 		description string
 		args        args
-		beforeRun   func(storage map[vos.TopicName]entities.Topic)
+		want        vos.TopicName
 		wantErr     error
 	}
 
@@ -71,10 +70,9 @@ func TestGetTopic_Failure(t *testing.T) {
 		{
 			description: "should return an error when topic is not found",
 			args: args{
-				topicName: vos.TopicName("neg_topic_1"),
+				topicName: vos.TopicName("topic1"),
 			},
-			beforeRun: func(storage map[vos.TopicName]entities.Topic) {
-			},
+			want:    vos.TopicName(""),
 			wantErr: entities.ErrTopicNotFound,
 		},
 	}
@@ -83,18 +81,14 @@ func TestGetTopic_Failure(t *testing.T) {
 		tt := tt
 		t.Run(tt.description, func(t *testing.T) {
 			t.Parallel()
+
 			storage := make(map[vos.TopicName]entities.Topic)
-			tt.beforeRun(storage)
-
-			newTopic, err := entities.NewTopic(tt.args.topicName)
-			require.NoError(t, err)
-			assert.NotEmpty(t, newTopic)
-
 			repository := NewMemoryRepository(storage)
-			getTopic, err := repository.GetTopic(context.TODO(), tt.args.topicName)
 
+			got, err := repository.GetTopic(context.TODO(), tt.args.topicName)
 			assert.ErrorIs(t, err, tt.wantErr)
-			assert.Empty(t, getTopic)
+
+			assert.Equal(t, tt.want, got.GetName())
 		})
 	}
 }
