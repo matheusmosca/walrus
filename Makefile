@@ -23,6 +23,15 @@ ifeq (, $(shell which $$(go env GOPATH)/bin/golangci-lint))
 endif
 	$$(go env GOPATH)/bin/golangci-lint run -c ./.golangci.yml ./...
 
+.PHONY: generate
+generate: compile-proto
+	@go mod tidy
+	@go install github.com/matryer/moq@latest
+	@echo "==>cleaning up generated files"
+	find . -type f -name '*_mock.go' -exec rm {} +
+	@echo "==>running go generate..."
+	go generate ./...
+
 .PHONY: compile-proto
 compile-proto:
 	@echo "==> Checking buf dependencies..."
