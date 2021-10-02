@@ -60,6 +60,10 @@ All you should know to run Walrus locally.
    ```bash
    make run-server
    ```
+3. Create generated files
+   ```bash
+   make generate
+   ```
 
 #### Docker
 
