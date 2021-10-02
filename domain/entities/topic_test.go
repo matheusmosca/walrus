@@ -135,11 +135,7 @@ func TestDispatch(t *testing.T) {
 func assertDispatchMessages(t *testing.T, topic Topic, messages []vos.Message, wantErr error) {
 	for _, msg := range messages {
 		err := topic.Dispatch(msg)
-		if wantErr == nil {
-			require.NoError(t, err)
-		}
-
-		assert.ErrorIs(t, err, err)
+		assert.ErrorIs(t, err, wantErr)
 	}
 }
 
