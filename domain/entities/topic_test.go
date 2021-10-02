@@ -89,7 +89,7 @@ func TestDispatch(t *testing.T) {
 		{
 			description:         "should returns error when message does not belong to this topic",
 			numberOfSubscribers: 5,
-			wantError:           ErrInvalidMessage,
+			wantError:           ErrTopicNameDoesNotMatch,
 			messages: []vos.Message{
 				{
 					TopicName:   vos.TopicName("test-topic2"),
@@ -127,21 +127,20 @@ func TestDispatch(t *testing.T) {
 
 			wg.Wait()
 
-			for _, msg := range tt.messages {
-				err := topic.Dispatch(msg)
-				if tt.wantError == nil {
-					require.NoError(t, err)
-				}
-
-				assertInvalidMessage(t, err, tt.wantError)
-			}
-
+			assertDispatchMessages(t, topic, tt.messages, tt.wantError)
 		})
 	}
 }
 
-func assertInvalidMessage(t *testing.T, err error, expectedErr error) {
-	assert.ErrorIs(t, err, expectedErr)
+func assertDispatchMessages(t *testing.T, topic Topic, messages []vos.Message, wantErr error) {
+	for _, msg := range messages {
+		err := topic.Dispatch(msg)
+		if wantErr == nil {
+			require.NoError(t, err)
+		}
+
+		assert.ErrorIs(t, err, err)
+	}
 }
 
 func assertDispatchedMessages(t *testing.T, topic Topic, wantMessages []vos.Message, wg *sync.WaitGroup) {

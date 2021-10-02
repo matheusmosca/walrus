@@ -36,7 +36,7 @@ func (t Topic) Activate() {
 
 func (t Topic) Dispatch(message vos.Message) error {
 	if message.TopicName != t.name {
-		return ErrInvalidMessage
+		return ErrTopicNameDoesNotMatch
 	}
 
 	t.newMessageCh <- message

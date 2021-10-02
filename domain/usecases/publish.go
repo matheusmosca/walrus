@@ -16,7 +16,9 @@ func (u useCase) Publish(ctx context.Context, message vos.Message) error {
 		return err
 	}
 
-	topic.Dispatch(message)
+	if err := topic.Dispatch(message); err != nil {
+		return err
+	}
 
 	return nil
 }
