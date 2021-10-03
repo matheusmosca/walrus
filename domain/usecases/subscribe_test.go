@@ -10,12 +10,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSubsribe(t *testing.T) {
+func TestSubscribe(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
 		ctx       context.Context
 		topicName vos.TopicName
+		message   vos.Message
 	}
 
 	type fields struct {
@@ -24,26 +25,34 @@ func TestSubsribe(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
-		args    args
-		fields  fields
-		wantCh  chan vos.Message
-		wantId  vos.SubscriberID
-		wantErr error
+		name     string
+		args     args
+		fields   fields
+		wantBody []byte
+		wantId   vos.SubscriberID
+		wantErr  error
 	}{
 		{
 			name: "subscribe should succeed",
 			args: args{
 				ctx:       context.Background(),
 				topicName: "walrus",
+				message: vos.Message{
+					TopicName:   "walrus",
+					PublishedBy: "walrus_test",
+					Body:        []byte("hello world"),
+				},
 			},
 			fields: fields{
-				storage:   &RepositoryMock{},
+				storage: &RepositoryMock{
+					GetTopicFunc: func(ctx context.Context, topicName vos.TopicName) (entities.Topic, error) {
+						return entities.Topic{}, nil
+					}},
 				topicName: "walrus",
 			},
-			wantCh:  make(chan vos.Message),
-			wantId:  vos.SubscriberID("id"),
-			wantErr: nil,
+			wantBody: []byte("hello world"),
+			wantId:   vos.SubscriberID("id"),
+			wantErr:  nil,
 		},
 		{
 			name: "short topic name should return error",
@@ -55,9 +64,9 @@ func TestSubsribe(t *testing.T) {
 				storage:   &RepositoryMock{},
 				topicName: "walrus",
 			},
-			wantCh:  nil,
-			wantId:  "",
-			wantErr: vos.ErrTopicNameTooShort,
+			wantBody: nil,
+			wantId:   "",
+			wantErr:  vos.ErrTopicNameTooShort,
 		},
 		{
 			name: "empty topic name message should return error",
@@ -69,37 +78,34 @@ func TestSubsribe(t *testing.T) {
 				storage:   &RepositoryMock{},
 				topicName: "walrus",
 			},
-			wantCh:  nil,
-			wantId:  "",
-			wantErr: vos.ErrEmptyTopicName,
+			wantBody: nil,
+			wantId:   "",
+			wantErr:  vos.ErrEmptyTopicName,
 		},
 		{
-			name: "nonexistent topic should return error",
+			name: "nonexistent topic should succeed",
 			args: args{
 				ctx:       context.Background(),
-				topicName: "testtopic",
+				topicName: "newTopic",
+				message: vos.Message{
+					TopicName:   "newTopic",
+					PublishedBy: "walrus_test",
+					Body:        []byte("hello world"),
+				},
 			},
 			fields: fields{
-				storage:   &RepositoryMock{},
-				topicName: "walrus",
+				storage: &RepositoryMock{
+					GetTopicFunc: func(ctx context.Context, topicName vos.TopicName) (entities.Topic, error) {
+						return entities.Topic{}, entities.ErrTopicNotFound
+					},
+					CreateTopicFunc: func(ctx context.Context, topicName vos.TopicName, topic entities.Topic) error {
+						return nil
+					}},
+				topicName: "newTopic",
 			},
-			wantCh:  nil,
-			wantId:  "",
-			wantErr: entities.ErrTopicNotFound,
-		},
-		{
-			name: "topic already exists should return error",
-			args: args{
-				ctx:       context.Background(),
-				topicName: "walrus",
-			},
-			fields: fields{
-				storage:   &RepositoryMock{},
-				topicName: "walrus",
-			},
-			wantCh:  nil,
-			wantId:  "",
-			wantErr: entities.ErrTopicNotFound,
+			wantBody: []byte("hello world"),
+			wantId:   vos.SubscriberID("id"),
+			wantErr:  nil,
 		},
 	}
 	for _, tt := range tests {
@@ -114,33 +120,22 @@ func TestSubsribe(t *testing.T) {
 			// activate the topic
 			topic.Activate()
 
-			tt.fields.storage = &RepositoryMock{
-				GetTopicFunc: func(ctx context.Context, topicName vos.TopicName) (entities.Topic, error) {
-					if tt.fields.topicName != tt.args.topicName {
-						return entities.Topic{}, entities.ErrTopicNotFound
-					}
-
-					return topic, nil
-				},
-				CreateTopicFunc: func(ctx context.Context, topicName vos.TopicName, topic entities.Topic) error {
-					if tt.fields.topicName == tt.args.topicName {
-						return entities.ErrTopicAlreadyExists
-					}
-
-					return nil
-				},
-			}
-
 			useCase := New(tt.fields.storage)
 			subCh, id, err := useCase.Subscribe(tt.args.ctx, tt.args.topicName)
-			if err != nil {
-				assert.ErrorIs(t, err, tt.wantErr)
+			assert.ErrorIs(t, err, tt.wantErr)
+			if tt.wantErr != nil {
+				assert.Empty(t, subCh)
+				assert.Empty(t, id)
 				return
 			}
 
+			err = topic.Dispatch(tt.args.message)
+			require.NoError(t, err)
+
+			gotMessage := <-subCh
+			assert.Equal(t, tt.wantBody, gotMessage.Body)
 			assert.NoError(t, err)
-			assert.IsType(t, tt.wantCh, subCh)
-			assert.IsType(t, tt.wantId, id)
+			assert.NotEmpty(t, id)
 		})
 	}
 }
