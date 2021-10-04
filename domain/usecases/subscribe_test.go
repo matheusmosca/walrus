@@ -3,6 +3,7 @@ package usecases
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/matheusmosca/walrus/domain/entities"
 	"github.com/matheusmosca/walrus/domain/vos"
@@ -19,18 +20,12 @@ func TestSubscribe(t *testing.T) {
 		message   vos.Message
 	}
 
-	type fields struct {
-		storage   Repository
-		topicName vos.TopicName
-	}
-
 	tests := []struct {
-		name     string
-		args     args
-		fields   fields
-		wantBody []byte
-		wantId   vos.SubscriberID
-		wantErr  error
+		name        string
+		args        args
+		fields      func(t *testing.T) (Repository, entities.Topic)
+		wantMessage vos.Message
+		wantErr     error
 	}{
 		{
 			name: "subscribe should succeed",
@@ -38,74 +33,78 @@ func TestSubscribe(t *testing.T) {
 				ctx:       context.Background(),
 				topicName: "walrus",
 				message: vos.Message{
-					TopicName:   "walrus",
-					PublishedBy: "walrus_test",
+					TopicName:   vos.TopicName("walrus"),
+					PublishedBy: "test_publisher",
 					Body:        []byte("hello world"),
 				},
 			},
-			fields: fields{
-				storage: &RepositoryMock{
+			fields: func(t *testing.T) (Repository, entities.Topic) {
+				topic, err := entities.NewTopic("walrus")
+				require.NoError(t, err)
+
+				repoMock := &RepositoryMock{
 					GetTopicFunc: func(ctx context.Context, topicName vos.TopicName) (entities.Topic, error) {
-						return entities.Topic{}, nil
-					}},
-				topicName: "walrus",
+						return topic, nil
+					},
+				}
+
+				return repoMock, topic
 			},
-			wantBody: []byte("hello world"),
-			wantId:   vos.SubscriberID("id"),
-			wantErr:  nil,
+			wantMessage: vos.Message{
+				TopicName:   vos.TopicName("walrus"),
+				PublishedBy: "test_publisher",
+				Body:        []byte("hello world"),
+			},
+			wantErr: nil,
 		},
 		{
 			name: "short topic name should return error",
 			args: args{
 				ctx:       context.Background(),
-				topicName: "xd",
+				topicName: "xy",
+				message:   vos.Message{},
 			},
-			fields: fields{
-				storage:   &RepositoryMock{},
-				topicName: "walrus",
-			},
-			wantBody: nil,
-			wantId:   "",
-			wantErr:  vos.ErrTopicNameTooShort,
+			fields:      func(t *testing.T) (Repository, entities.Topic) { return &RepositoryMock{}, entities.Topic{} },
+			wantMessage: vos.Message{},
+			wantErr:     vos.ErrTopicNameTooShort,
 		},
 		{
 			name: "empty topic name message should return error",
 			args: args{
 				ctx:       context.Background(),
 				topicName: "",
+				message:   vos.Message{},
 			},
-			fields: fields{
-				storage:   &RepositoryMock{},
-				topicName: "walrus",
-			},
-			wantBody: nil,
-			wantId:   "",
-			wantErr:  vos.ErrEmptyTopicName,
+			fields:      func(t *testing.T) (Repository, entities.Topic) { return &RepositoryMock{}, entities.Topic{} },
+			wantMessage: vos.Message{},
+			wantErr:     vos.ErrEmptyTopicName,
 		},
 		{
-			name: "nonexistent topic should succeed",
+			name: "nonexistent topic subscribe should succeed",
 			args: args{
 				ctx:       context.Background(),
 				topicName: "newTopic",
 				message: vos.Message{
-					TopicName:   "newTopic",
-					PublishedBy: "walrus_test",
+					TopicName:   vos.TopicName("newTopic"),
+					PublishedBy: "test_publisher",
 					Body:        []byte("hello world"),
 				},
 			},
-			fields: fields{
-				storage: &RepositoryMock{
+			fields: func(t *testing.T) (Repository, entities.Topic) {
+				topic, err := entities.NewTopic("newTopic")
+				require.NoError(t, err)
+
+				repoMock := &RepositoryMock{
 					GetTopicFunc: func(ctx context.Context, topicName vos.TopicName) (entities.Topic, error) {
-						return entities.Topic{}, entities.ErrTopicNotFound
+						return topic, entities.ErrTopicNotFound
 					},
 					CreateTopicFunc: func(ctx context.Context, topicName vos.TopicName, topic entities.Topic) error {
 						return nil
-					}},
-				topicName: "newTopic",
+					},
+				}
+
+				return repoMock, topic
 			},
-			wantBody: []byte("hello world"),
-			wantId:   vos.SubscriberID("id"),
-			wantErr:  nil,
 		},
 	}
 	for _, tt := range tests {
@@ -113,29 +112,30 @@ func TestSubscribe(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			// init the topic
-			topic, err := entities.NewTopic(tt.fields.topicName)
-			require.NoError(t, err)
-
-			// activate the topic
+			repo, topic := tt.fields(t)
 			topic.Activate()
 
-			useCase := New(tt.fields.storage)
+			useCase := New(repo)
 			subCh, id, err := useCase.Subscribe(tt.args.ctx, tt.args.topicName)
 			assert.ErrorIs(t, err, tt.wantErr)
+
 			if tt.wantErr != nil {
 				assert.Empty(t, subCh)
 				assert.Empty(t, id)
 				return
 			}
+			defer close(subCh)
 
-			err = topic.Dispatch(tt.args.message)
-			require.NoError(t, err)
+			assert.NotEmpty(t, id)
+
+			go func() {
+				time.Sleep(time.Millisecond * 4)
+				err = topic.Dispatch(tt.args.message)
+				require.NoError(t, err)
+			}()
 
 			gotMessage := <-subCh
-			assert.Equal(t, tt.wantBody, gotMessage.Body)
-			assert.NoError(t, err)
-			assert.NotEmpty(t, id)
+			assert.Equal(t, tt.wantMessage, gotMessage)
 		})
 	}
 }
