@@ -1,6 +1,7 @@
 package entities
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/matheusmosca/walrus/domain/vos"
@@ -44,12 +45,32 @@ func (t Topic) Dispatch(message vos.Message) error {
 	return nil
 }
 
-func (t Topic) RemoveSubscriber(subscriberID vos.SubscriberID) {
+func (t *Topic) RemoveSubscriber(subscriberID vos.SubscriberID) error {
+	if _, ok := t.subscribers.Load(subscriberID); !ok {
+		return ErrSubscriberNotFound
+	}
+
 	t.killSubCh <- subscriberID
+
+	return nil
 }
 
 func (t Topic) addSubscriber(sub Subscriber) {
 	t.newSubCh <- sub
+}
+
+func (t Topic) GetSubscriber(subscriberID vos.SubscriberID) interface{} {
+	if value, ok := t.subscribers.Load(subscriberID); ok {
+		return value
+	}
+
+	return nil
+}
+
+func (t Topic) UpdateTopic(topic Topic) (Topic, error) {
+	fmt.Println("implement me")
+
+	return Topic{}, nil
 }
 
 func (t *Topic) listenForSubscriptions() {

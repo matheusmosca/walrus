@@ -30,6 +30,9 @@ var _ Repository = &RepositoryMock{}
 // 			ListTopicsFunc: func(ctx context.Context) ([]entities.Topic, error) {
 // 				panic("mock out the ListTopics method")
 // 			},
+// 			UpdateTopicFunc: func(ctx context.Context, topicName entities.Topic) (entities.Topic, error) {
+// 				panic("mock out the UpdateTopic method")
+// 			},
 // 		}
 //
 // 		// use mockedRepository in code that requires Repository
@@ -45,6 +48,9 @@ type RepositoryMock struct {
 
 	// ListTopicsFunc mocks the ListTopics method.
 	ListTopicsFunc func(ctx context.Context) ([]entities.Topic, error)
+
+	// UpdateTopicFunc mocks the UpdateTopic method.
+	UpdateTopicFunc func(ctx context.Context, topicName entities.Topic) (entities.Topic, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -69,10 +75,18 @@ type RepositoryMock struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 		}
+		// UpdateTopic holds details about calls to the UpdateTopic method.
+		UpdateTopic []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// TopicName is the topicName argument value.
+			TopicName entities.Topic
+		}
 	}
 	lockCreateTopic sync.RWMutex
 	lockGetTopic    sync.RWMutex
 	lockListTopics  sync.RWMutex
+	lockUpdateTopic sync.RWMutex
 }
 
 // CreateTopic calls CreateTopicFunc.
@@ -177,5 +191,40 @@ func (mock *RepositoryMock) ListTopicsCalls() []struct {
 	mock.lockListTopics.RLock()
 	calls = mock.calls.ListTopics
 	mock.lockListTopics.RUnlock()
+	return calls
+}
+
+// UpdateTopic calls UpdateTopicFunc.
+func (mock *RepositoryMock) UpdateTopic(ctx context.Context, topicName entities.Topic) (entities.Topic, error) {
+	if mock.UpdateTopicFunc == nil {
+		panic("RepositoryMock.UpdateTopicFunc: method is nil but Repository.UpdateTopic was just called")
+	}
+	callInfo := struct {
+		Ctx       context.Context
+		TopicName entities.Topic
+	}{
+		Ctx:       ctx,
+		TopicName: topicName,
+	}
+	mock.lockUpdateTopic.Lock()
+	mock.calls.UpdateTopic = append(mock.calls.UpdateTopic, callInfo)
+	mock.lockUpdateTopic.Unlock()
+	return mock.UpdateTopicFunc(ctx, topicName)
+}
+
+// UpdateTopicCalls gets all the calls that were made to UpdateTopic.
+// Check the length with:
+//     len(mockedRepository.UpdateTopicCalls())
+func (mock *RepositoryMock) UpdateTopicCalls() []struct {
+	Ctx       context.Context
+	TopicName entities.Topic
+} {
+	var calls []struct {
+		Ctx       context.Context
+		TopicName entities.Topic
+	}
+	mock.lockUpdateTopic.RLock()
+	calls = mock.calls.UpdateTopic
+	mock.lockUpdateTopic.RUnlock()
 	return calls
 }
