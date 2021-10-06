@@ -61,7 +61,6 @@ func (t Topic) GetSubscriber(subscriberID vos.SubscriberID) (*Subscriber, error)
 		subsInterface := value.(Subscriber)
 
 		return &subsInterface, nil
-
 	}
 
 	return nil, ErrSubscriberNotFound
