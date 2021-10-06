@@ -48,6 +48,11 @@ func TestUnsubscribe(t *testing.T) {
 				subscriber := entities.NewSubscriber(topic)
 				ch, ID := subscriber.Subscribe()
 
+				// Assert that the subscriber has been created successfully
+				sub, err := topic.GetSubscriber(ID)
+				require.NoError(t, err)
+				assert.NotNil(t, sub)
+
 				return ch, ID
 			},
 			wantErr:        nil,
@@ -86,13 +91,6 @@ func TestUnsubscribe(t *testing.T) {
 
 			subsCh, subsID := tt.beforeRun(topic)
 			defer close(subsCh)
-
-			// Assert that the subscriber has been created successfully
-			if tt.wantSubscriber {
-				sub, err := topic.GetSubscriber(subsID)
-				require.NoError(t, err)
-				assert.NotNil(t, sub)
-			}
 
 			tt.fields.storage = &RepositoryMock{
 				GetTopicFunc: func(ctx context.Context, topicName vos.TopicName) (entities.Topic, error) {
