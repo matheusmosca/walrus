@@ -56,12 +56,15 @@ func (t Topic) addSubscriber(sub Subscriber) {
 	t.newSubCh <- sub
 }
 
-func (t Topic) GetSubscriber(subscriberID vos.SubscriberID) interface{} {
+func (t Topic) GetSubscriber(subscriberID vos.SubscriberID) (*Subscriber, error) {
 	if value, ok := t.subscribers.Load(subscriberID); ok {
-		return value
+		subsInterface := value.(Subscriber)
+
+		return &subsInterface, nil
+
 	}
 
-	return nil
+	return nil, ErrSubscriberNotFound
 }
 
 func (t Topic) UpdateTopic(topic Topic) (Topic, error) {

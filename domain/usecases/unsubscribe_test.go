@@ -25,20 +25,19 @@ func TestUnsubscribe(t *testing.T) {
 	}
 
 	tests := []struct {
-		name      string
-		args      args
-		fields    fields
-		beforeRun func(topic entities.Topic) (chan vos.Message, vos.SubscriberID)
-		wantErr   error
+		name           string
+		args           args
+		fields         fields
+		beforeRun      func(topic entities.Topic) (chan vos.Message, vos.SubscriberID)
+		wantErr        error
+		wantSubscriber bool
 	}{
 		{
 			name: "unsubscribe should succeed",
 			args: args{
 				ctx: context.Background(),
 				message: vos.Message{
-					TopicName:   "unsubscribing",
-					PublishedBy: "unsubscribing_test",
-					Body:        []byte("empty lol"),
+					TopicName: "unsubscribing",
 				},
 			},
 			fields: fields{
@@ -47,21 +46,19 @@ func TestUnsubscribe(t *testing.T) {
 			},
 			beforeRun: func(topic entities.Topic) (chan vos.Message, vos.SubscriberID) {
 				subscriber := entities.NewSubscriber(topic)
-				subscriber.Subscribe()
 				ch, ID := subscriber.Subscribe()
 
 				return ch, ID
 			},
-			wantErr: nil,
+			wantErr:        nil,
+			wantSubscriber: true,
 		},
 		{
 			name: "try to unsubscribe a subscriber that doesnt exist should fail",
 			args: args{
 				ctx: context.Background(),
 				message: vos.Message{
-					TopicName:   "unsubscribing",
-					PublishedBy: "unsubscribing_test",
-					Body:        []byte("empty lol"),
+					TopicName: "unsubscribing",
 				},
 			},
 			fields: fields{
@@ -73,7 +70,8 @@ func TestUnsubscribe(t *testing.T) {
 
 				return msgChan, vos.SubscriberID("")
 			},
-			wantErr: entities.ErrSubscriberNotFound,
+			wantErr:        entities.ErrSubscriberNotFound,
+			wantSubscriber: false,
 		},
 	}
 	for _, tt := range tests {
@@ -88,6 +86,13 @@ func TestUnsubscribe(t *testing.T) {
 
 			subsCh, subsID := tt.beforeRun(topic)
 			defer close(subsCh)
+
+			// Assert that the subscriber has been created successfully
+			if tt.wantSubscriber {
+				sub, err := topic.GetSubscriber(subsID)
+				require.NoError(t, err)
+				assert.NotNil(t, sub)
+			}
 
 			tt.fields.storage = &RepositoryMock{
 				GetTopicFunc: func(ctx context.Context, topicName vos.TopicName) (entities.Topic, error) {
@@ -106,9 +111,9 @@ func TestUnsubscribe(t *testing.T) {
 				return
 			}
 
-			nilSubs := topic.GetSubscriber(subsID)
-			assert.Nil(t, nilSubs)
-
+			// Assert the unsubscription
+			_, err = topic.GetSubscriber(subsID)
+			assert.ErrorIs(t, entities.ErrSubscriberNotFound, err)
 		})
 	}
 }
