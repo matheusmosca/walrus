@@ -32,7 +32,6 @@ func NewTopic(topicName vos.TopicName) (Topic, error) {
 func (t Topic) Activate() {
 	go t.listenForSubscriptions()
 	go t.listenForMessages()
-	go t.listenForKills()
 }
 
 func (t Topic) Dispatch(message vos.Message) error {
@@ -46,11 +45,9 @@ func (t Topic) Dispatch(message vos.Message) error {
 }
 
 func (t *Topic) RemoveSubscriber(subscriberID vos.SubscriberID) error {
-	if _, ok := t.subscribers.Load(subscriberID); !ok {
+	if _, ok := t.subscribers.LoadAndDelete(subscriberID); !ok {
 		return ErrSubscriberNotFound
 	}
-
-	t.killSubCh <- subscriberID
 
 	return nil
 }
@@ -76,12 +73,6 @@ func (t Topic) UpdateTopic(topic Topic) (Topic, error) {
 func (t *Topic) listenForSubscriptions() {
 	for newSubCh := range t.newSubCh {
 		t.subscribers.Store(newSubCh.GetID(), newSubCh)
-	}
-}
-
-func (t *Topic) listenForKills() {
-	for subscriberID := range t.killSubCh {
-		t.subscribers.Delete(subscriberID)
 	}
 }
 

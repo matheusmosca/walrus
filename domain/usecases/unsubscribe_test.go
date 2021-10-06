@@ -3,7 +3,6 @@ package usecases
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,7 +32,7 @@ func TestUnsubscribe(t *testing.T) {
 		wantErr   error
 	}{
 		{
-			name: "unsubscribe should success",
+			name: "unsubscribe should succeed",
 			args: args{
 				ctx: context.Background(),
 				message: vos.Message{
@@ -90,9 +89,6 @@ func TestUnsubscribe(t *testing.T) {
 			subsCh, subsID := tt.beforeRun(topic)
 			defer close(subsCh)
 
-			sss := topic.GetSubscriber(subsID)
-			assert.NotNil(t, sss)
-
 			tt.fields.storage = &RepositoryMock{
 				GetTopicFunc: func(ctx context.Context, topicName vos.TopicName) (entities.Topic, error) {
 					if tt.fields.topicName != tt.args.message.TopicName {
@@ -110,7 +106,6 @@ func TestUnsubscribe(t *testing.T) {
 				return
 			}
 
-			time.Sleep(5 * time.Second)
 			nilSubs := topic.GetSubscriber(subsID)
 			assert.Nil(t, nilSubs)
 
