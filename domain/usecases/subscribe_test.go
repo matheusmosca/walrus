@@ -96,6 +96,7 @@ func TestSubscribe(t *testing.T) {
 
 				return repoMock, topic
 			},
+			wantErr: nil,
 		},
 	}
 	for _, tt := range tests {
