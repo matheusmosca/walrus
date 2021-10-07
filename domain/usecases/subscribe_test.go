@@ -3,7 +3,6 @@ package usecases
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/matheusmosca/walrus/domain/entities"
 	"github.com/matheusmosca/walrus/domain/vos"
@@ -21,11 +20,10 @@ func TestSubscribe(t *testing.T) {
 	}
 
 	tests := []struct {
-		name        string
-		args        args
-		fields      func(t *testing.T) (Repository, entities.Topic)
-		wantMessage vos.Message
-		wantErr     error
+		name    string
+		args    args
+		fields  func(t *testing.T) (Repository, entities.Topic)
+		wantErr error
 	}{
 		{
 			name: "subscribe should succeed",
@@ -50,11 +48,6 @@ func TestSubscribe(t *testing.T) {
 
 				return repoMock, topic
 			},
-			wantMessage: vos.Message{
-				TopicName:   vos.TopicName("walrus"),
-				PublishedBy: "test_publisher",
-				Body:        []byte("hello world"),
-			},
 			wantErr: nil,
 		},
 		{
@@ -64,9 +57,8 @@ func TestSubscribe(t *testing.T) {
 				topicName: "xy",
 				message:   vos.Message{},
 			},
-			fields:      func(t *testing.T) (Repository, entities.Topic) { return &RepositoryMock{}, entities.Topic{} },
-			wantMessage: vos.Message{},
-			wantErr:     vos.ErrTopicNameTooShort,
+			fields:  func(t *testing.T) (Repository, entities.Topic) { return &RepositoryMock{}, entities.Topic{} },
+			wantErr: vos.ErrTopicNameTooShort,
 		},
 		{
 			name: "empty topic name message should return error",
@@ -75,9 +67,8 @@ func TestSubscribe(t *testing.T) {
 				topicName: "",
 				message:   vos.Message{},
 			},
-			fields:      func(t *testing.T) (Repository, entities.Topic) { return &RepositoryMock{}, entities.Topic{} },
-			wantMessage: vos.Message{},
-			wantErr:     vos.ErrEmptyTopicName,
+			fields:  func(t *testing.T) (Repository, entities.Topic) { return &RepositoryMock{}, entities.Topic{} },
+			wantErr: vos.ErrEmptyTopicName,
 		},
 		{
 			name: "nonexistent topic subscribe should succeed",
@@ -127,15 +118,6 @@ func TestSubscribe(t *testing.T) {
 			defer close(subCh)
 
 			assert.NotEmpty(t, id)
-
-			go func() {
-				time.Sleep(time.Millisecond * 4)
-				err = topic.Dispatch(tt.args.message)
-				require.NoError(t, err)
-			}()
-
-			gotMessage := <-subCh
-			assert.Equal(t, tt.wantMessage, gotMessage)
 		})
 	}
 }
