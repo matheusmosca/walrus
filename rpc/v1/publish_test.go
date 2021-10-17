@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"testing"
 
@@ -13,203 +14,167 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 )
 
-const buffer = 1024 * 1024
-
-var lis *bufconn.Listener
-
-func bufDialer(context.Context, string) (net.Conn, error) {
-	return lis.Dial()
-}
 func TestPublish(t *testing.T) {
 	type args struct {
 		ctx     context.Context
-		message pb.Message
+		message vos.Message
 	}
 
 	type fields struct {
-		storage   usecases.Repository
 		topicName vos.TopicName
 	}
 
+	type grpcError struct {
+		code codes.Code
+		msg  error
+	}
+
 	testCases := []struct {
-		name      string
-		args      args
-		fields    fields
-		beforeRun func(topic entities.Topic) chan vos.Message
-		want      []byte
-		wantErr   error
+		name    string
+		args    args
+		fields  fields
+		wantErr *grpcError
 	}{
 		{
 			name: "publish should succeed",
 			args: args{
 				ctx: context.Background(),
-				message: pb.Message{
-					Topic:       "walrus",
+				message: vos.Message{
+					TopicName:   "walrus",
 					PublishedBy: "walrus_test",
 					Body:        []byte("hello world"),
 				},
 			},
 			fields: fields{
-				storage:   &usecases.RepositoryMock{},
 				topicName: "walrus",
 			},
-			beforeRun: func(topic entities.Topic) chan vos.Message {
-				subscriber := entities.NewSubscriber(topic)
-				ch, _ := subscriber.Subscribe()
-				return ch
-			},
-			want:    []byte("hello world"),
-			wantErr: nil,
+			wantErr: &grpcError{},
 		},
 		{
 			name: "short topic name message should error",
 			args: args{
 				ctx: context.Background(),
-				message: pb.Message{
-					Topic:       "xd",
+				message: vos.Message{
+					TopicName:   "xd",
 					PublishedBy: "walrus_test",
 					Body:        []byte("hello world"),
 				},
 			},
 			fields: fields{
-				storage:   &usecases.RepositoryMock{},
 				topicName: "walrus",
 			},
-			beforeRun: func(topic entities.Topic) chan vos.Message {
-				subscriber := entities.NewSubscriber(topic)
-				ch, _ := subscriber.Subscribe()
-				return ch
+			wantErr: &grpcError{
+				code: codes.InvalidArgument,
+				msg:  vos.ErrTopicNameTooShort,
 			},
-			want:    []byte{},
-			wantErr: injectStatusCode(vos.ErrTopicNameTooShort),
 		},
 		{
 			name: "empty topic name should error",
 			args: args{
 				ctx: context.Background(),
-				message: pb.Message{
-					Topic:       "",
+				message: vos.Message{
+					TopicName:   "",
 					PublishedBy: "walrus_test",
 					Body:        []byte("hello again"),
 				},
 			},
 			fields: fields{
-				storage:   &usecases.RepositoryMock{},
 				topicName: "walrus",
 			},
-			beforeRun: func(topic entities.Topic) chan vos.Message {
-				subscriber := entities.NewSubscriber(topic)
-				ch, _ := subscriber.Subscribe()
-				return ch
+			wantErr: &grpcError{
+				code: codes.InvalidArgument,
+				msg:  vos.ErrEmptyTopicName,
 			},
-			want:    []byte{},
-			wantErr: injectStatusCode(vos.ErrEmptyTopicName),
 		},
 		{
 			name: "short published by message should error",
 			args: args{
 				ctx: context.Background(),
-				message: pb.Message{
-					Topic:       "walrus",
+				message: vos.Message{
+					TopicName:   "walrus",
 					PublishedBy: "fb",
 					Body:        []byte("hello world"),
 				},
 			},
 			fields: fields{
-				storage:   &usecases.RepositoryMock{},
 				topicName: "walrus",
 			},
-			beforeRun: func(topic entities.Topic) chan vos.Message {
-				subscriber := entities.NewSubscriber(topic)
-				ch, _ := subscriber.Subscribe()
-				return ch
+			wantErr: &grpcError{
+				code: codes.InvalidArgument,
+				msg:  vos.ErrPublishedByTooShort,
 			},
-			want:    []byte{},
-			wantErr: injectStatusCode(vos.ErrPublishedByTooShort),
 		},
 		{
 			name: "empty published by message should error",
 			args: args{
 				ctx: context.Background(),
-				message: pb.Message{
-					Topic:       "walrus",
+				message: vos.Message{
+					TopicName:   "walrus",
 					PublishedBy: "",
 					Body:        []byte("helloorld"),
 				},
 			},
 			fields: fields{
-				storage:   &usecases.RepositoryMock{},
 				topicName: "walrus",
 			},
-			beforeRun: func(topic entities.Topic) chan vos.Message {
-				subscriber := entities.NewSubscriber(topic)
-				ch, _ := subscriber.Subscribe()
-				return ch
+			wantErr: &grpcError{
+				code: codes.InvalidArgument,
+				msg:  vos.ErrEmptyPublishedBy,
 			},
-			want:    []byte{},
-			wantErr: injectStatusCode(vos.ErrEmptyPublishedBy),
 		},
 		{
 			name: "nonexistent topic should return error",
 			args: args{
 				ctx: context.Background(),
-				message: pb.Message{
-					Topic:       "elephant",
+				message: vos.Message{
+					TopicName:   "elephant",
 					PublishedBy: "noone",
 					Body:        []byte("bye world"),
 				},
 			},
 			fields: fields{
-				storage:   &usecases.RepositoryMock{},
 				topicName: "walrus",
 			},
-			beforeRun: func(topic entities.Topic) chan vos.Message {
-				subscriber := entities.NewSubscriber(topic)
-				ch, _ := subscriber.Subscribe()
-				return ch
+			wantErr: &grpcError{
+				code: codes.NotFound,
+				msg:  entities.ErrTopicNotFound,
 			},
-			want:    []byte{},
-			wantErr: injectStatusCode(entities.ErrTopicNotFound),
 		},
 	}
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
 			// setup server
+			buffer := 1024 * 1024
 			ctx := context.Background()
-			lis = bufconn.Listen(buffer)
+			lis := bufconn.Listen(buffer)
 			srv := grpc.NewServer()
 
-			conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(bufDialer), grpc.WithInsecure())
+			conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
+				return lis.Dial()
+			}), grpc.WithInsecure())
 			require.NoError(t, err)
 			defer conn.Close()
 
-			// init topic
-			topic, err := entities.NewTopic(tt.fields.topicName)
-			require.NoError(t, err)
-
-			// activate topic
-			topic.Activate()
-
-			// subscribe to topic
-			subCh := tt.beforeRun(topic)
-			defer close(subCh)
-
-			// mock repository
-			tt.fields.storage = &usecases.RepositoryMock{
-				GetTopicFunc: func(ctx context.Context, topicName vos.TopicName) (entities.Topic, error) {
-					if tt.fields.topicName != vos.TopicName(tt.args.message.Topic) {
-						return entities.Topic{}, entities.ErrTopicNotFound
+			// mock use case
+			mockedUseCase := &usecases.UseCaseMock{
+				PublishFunc: func(ctx context.Context, message vos.Message) error {
+					if err := message.Validate(); err != nil {
+						return err
 					}
-					return topic, nil
+					if tt.fields.topicName != tt.args.message.TopicName {
+						return entities.ErrTopicNotFound
+					}
+					return nil
 				},
 			}
 
 			// create usecase
-			useCase := usecases.New(tt.fields.storage)
-			useCaseRPC := New(useCase, logrus.NewEntry(&logrus.Logger{}))
+			useCaseRPC := New(mockedUseCase, logrus.NewEntry(&logrus.Logger{}))
 
 			// serve listener
 			pb.RegisterWalrusServer(srv, useCaseRPC)
@@ -222,17 +187,20 @@ func TestPublish(t *testing.T) {
 			client := pb.NewWalrusClient(conn)
 
 			// publish to topic
-			_, err = client.Publish(tt.args.ctx, &pb.PublishRequest{Message: &tt.args.message})
-			if tt.wantErr != nil {
-				assert.ErrorIs(t, err, tt.wantErr)
+			publishRequest := pb.PublishRequest{
+				Message: &pb.Message{
+					Topic:       tt.args.message.TopicName.String(),
+					PublishedBy: tt.args.message.PublishedBy,
+					Body:        tt.args.message.Body,
+				},
+			}
+			_, err = client.Publish(tt.args.ctx, &publishRequest)
+			if *tt.wantErr != (grpcError{}) {
+				s, _ := status.FromError(err)
+				assert.Equal(t, *tt.wantErr, grpcError{code: s.Code(), msg: fmt.Errorf("%s", s.Message())})
 				return
 			}
 			assert.NoError(t, err)
-
-			// check published message
-			actualMsg := <-subCh
-			require.Equal(t, tt.want, actualMsg.Body)
 		})
-
 	}
 }
