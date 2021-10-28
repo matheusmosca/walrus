@@ -12,7 +12,12 @@ func (u useCase) Unsubscribe(ctx context.Context, subscriberID vos.SubscriberID,
 		return err
 	}
 
-	topic.RemoveSubscriber(subscriberID)
+	err = topic.RemoveSubscriber(subscriberID)
+	if err != nil {
+		return err
+	}
+
+	//u.storage.UpdateTopic(ctx, topic)
 
 	return nil
 }

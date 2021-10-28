@@ -18,6 +18,7 @@ type useCase struct {
 type Repository interface {
 	CreateTopic(ctx context.Context, name vos.TopicName, topic entities.Topic) error
 	GetTopic(ctx context.Context, topicName vos.TopicName) (entities.Topic, error)
+	UpdateTopic(ctx context.Context, topicName entities.Topic) (entities.Topic, error)
 	ListTopics(ctx context.Context) ([]entities.Topic, error)
 }
 

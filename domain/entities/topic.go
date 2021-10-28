@@ -1,6 +1,7 @@
 package entities
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/matheusmosca/walrus/domain/vos"
@@ -31,7 +32,6 @@ func NewTopic(topicName vos.TopicName) (Topic, error) {
 func (t Topic) Activate() {
 	go t.listenForSubscriptions()
 	go t.listenForMessages()
-	go t.listenForKills()
 }
 
 func (t Topic) Dispatch(message vos.Message) error {
@@ -44,23 +44,37 @@ func (t Topic) Dispatch(message vos.Message) error {
 	return nil
 }
 
-func (t Topic) RemoveSubscriber(subscriberID vos.SubscriberID) {
-	t.killSubCh <- subscriberID
+func (t *Topic) RemoveSubscriber(subscriberID vos.SubscriberID) error {
+	if _, ok := t.subscribers.LoadAndDelete(subscriberID); !ok {
+		return ErrSubscriberNotFound
+	}
+
+	return nil
 }
 
 func (t Topic) addSubscriber(sub Subscriber) {
 	t.newSubCh <- sub
 }
 
+func (t Topic) GetSubscriber(subscriberID vos.SubscriberID) (*Subscriber, error) {
+	if value, ok := t.subscribers.Load(subscriberID); ok {
+		subsInterface := value.(Subscriber)
+
+		return &subsInterface, nil
+	}
+
+	return nil, ErrSubscriberNotFound
+}
+
+func (t Topic) UpdateTopic(topic Topic) (Topic, error) {
+	fmt.Println("implement me")
+
+	return Topic{}, nil
+}
+
 func (t *Topic) listenForSubscriptions() {
 	for newSubCh := range t.newSubCh {
 		t.subscribers.Store(newSubCh.GetID(), newSubCh)
-	}
-}
-
-func (t *Topic) listenForKills() {
-	for subscriberID := range t.killSubCh {
-		t.subscribers.Delete(subscriberID)
 	}
 }
 
