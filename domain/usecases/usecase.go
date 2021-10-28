@@ -21,6 +21,7 @@ type Repository interface {
 	ListTopics(ctx context.Context) ([]entities.Topic, error)
 }
 
+//go:generate moq -fmt goimports -out usecase_mock.go . UseCase:UseCaseMock
 type UseCase interface {
 	Publish(ctx context.Context, message vos.Message) error
 	Unsubscribe(ctx context.Context, subscriberID vos.SubscriberID, topicName vos.TopicName) error
