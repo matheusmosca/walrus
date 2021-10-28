@@ -218,6 +218,7 @@ func TestPublish(t *testing.T) {
 				return
 			}
 			assert.NoError(t, err)
+			assert.Equal(t, tt.wantCode, codes.OK)
 		})
 	}
 }
