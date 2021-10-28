@@ -26,19 +26,15 @@ func TestPublish(t *testing.T) {
 	}
 
 	type fields struct {
-		topicName vos.TopicName
-	}
-
-	type grpcError struct {
-		code codes.Code
-		msg  error
+		useCaseMock *usecases.UseCaseMock
 	}
 
 	testCases := []struct {
-		name    string
-		args    args
-		fields  fields
-		wantErr *grpcError
+		name     string
+		args     args
+		fields   fields
+		wantErr  error
+		wantCode codes.Code
 	}{
 		{
 			name: "publish should succeed",
@@ -51,9 +47,14 @@ func TestPublish(t *testing.T) {
 				},
 			},
 			fields: fields{
-				topicName: "walrus",
+				useCaseMock: &usecases.UseCaseMock{
+					PublishFunc: func(ctx context.Context, message vos.Message) error {
+						return nil
+					},
+				},
 			},
-			wantErr: &grpcError{},
+			wantErr:  nil,
+			wantCode: codes.OK,
 		},
 		{
 			name: "short topic name message should error",
@@ -66,12 +67,14 @@ func TestPublish(t *testing.T) {
 				},
 			},
 			fields: fields{
-				topicName: "walrus",
+				useCaseMock: &usecases.UseCaseMock{
+					PublishFunc: func(ctx context.Context, message vos.Message) error {
+						return vos.ErrTopicNameTooShort
+					},
+				},
 			},
-			wantErr: &grpcError{
-				code: codes.InvalidArgument,
-				msg:  vos.ErrTopicNameTooShort,
-			},
+			wantErr:  injectStatusCode(vos.ErrTopicNameTooShort),
+			wantCode: codes.InvalidArgument,
 		},
 		{
 			name: "empty topic name should error",
@@ -84,12 +87,12 @@ func TestPublish(t *testing.T) {
 				},
 			},
 			fields: fields{
-				topicName: "walrus",
+				useCaseMock: &usecases.UseCaseMock{PublishFunc: func(ctx context.Context, message vos.Message) error {
+					return vos.ErrEmptyTopicName
+				}},
 			},
-			wantErr: &grpcError{
-				code: codes.InvalidArgument,
-				msg:  vos.ErrEmptyTopicName,
-			},
+			wantErr:  injectStatusCode(vos.ErrEmptyTopicName),
+			wantCode: codes.InvalidArgument,
 		},
 		{
 			name: "short published by message should error",
@@ -102,12 +105,14 @@ func TestPublish(t *testing.T) {
 				},
 			},
 			fields: fields{
-				topicName: "walrus",
+				useCaseMock: &usecases.UseCaseMock{
+					PublishFunc: func(ctx context.Context, message vos.Message) error {
+						return vos.ErrPublishedByTooShort
+					},
+				},
 			},
-			wantErr: &grpcError{
-				code: codes.InvalidArgument,
-				msg:  vos.ErrPublishedByTooShort,
-			},
+			wantErr:  injectStatusCode(vos.ErrPublishedByTooShort),
+			wantCode: codes.InvalidArgument,
 		},
 		{
 			name: "empty published by message should error",
@@ -120,12 +125,14 @@ func TestPublish(t *testing.T) {
 				},
 			},
 			fields: fields{
-				topicName: "walrus",
+				useCaseMock: &usecases.UseCaseMock{
+					PublishFunc: func(ctx context.Context, message vos.Message) error {
+						return vos.ErrEmptyPublishedBy
+					},
+				},
 			},
-			wantErr: &grpcError{
-				code: codes.InvalidArgument,
-				msg:  vos.ErrEmptyPublishedBy,
-			},
+			wantErr:  injectStatusCode(vos.ErrEmptyPublishedBy),
+			wantCode: codes.InvalidArgument,
 		},
 		{
 			name: "nonexistent topic should return error",
@@ -138,43 +145,53 @@ func TestPublish(t *testing.T) {
 				},
 			},
 			fields: fields{
-				topicName: "walrus",
+				useCaseMock: &usecases.UseCaseMock{
+					PublishFunc: func(ctx context.Context, message vos.Message) error {
+						return entities.ErrTopicNotFound
+					},
+				},
 			},
-			wantErr: &grpcError{
-				code: codes.NotFound,
-				msg:  entities.ErrTopicNotFound,
+			wantErr:  injectStatusCode(entities.ErrTopicNotFound),
+			wantCode: codes.NotFound,
+		},
+		{
+			name: "unexpected error should give internal error",
+			args: args{
+				ctx: context.Background(),
+				message: vos.Message{
+					TopicName:   "elephant",
+					PublishedBy: "noone",
+					Body:        []byte("bye world"),
+				},
 			},
+			fields: fields{
+				useCaseMock: &usecases.UseCaseMock{
+					PublishFunc: func(ctx context.Context, message vos.Message) error {
+						return fmt.Errorf("something bad happened")
+					},
+				},
+			},
+			wantErr:  injectStatusCode(fmt.Errorf("internal server error")),
+			wantCode: codes.Internal,
 		},
 	}
 	for _, tt := range testCases {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			// setup server
 			buffer := 1024 * 1024
-			ctx := context.Background()
 			lis := bufconn.Listen(buffer)
 			srv := grpc.NewServer()
 
-			conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
+			conn, err := grpc.DialContext(tt.args.ctx, "bufnet", grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
 				return lis.Dial()
 			}), grpc.WithInsecure())
 			require.NoError(t, err)
 			defer conn.Close()
 
-			// mock use case
-			mockedUseCase := &usecases.UseCaseMock{
-				PublishFunc: func(ctx context.Context, message vos.Message) error {
-					if err := message.Validate(); err != nil {
-						return err
-					}
-					if tt.fields.topicName != tt.args.message.TopicName {
-						return entities.ErrTopicNotFound
-					}
-					return nil
-				},
-			}
-
 			// create usecase
-			useCaseRPC := New(mockedUseCase, logrus.NewEntry(&logrus.Logger{}))
+			useCaseRPC := New(tt.fields.useCaseMock, logrus.NewEntry(&logrus.Logger{}))
 
 			// serve listener
 			pb.RegisterWalrusServer(srv, useCaseRPC)
@@ -187,17 +204,17 @@ func TestPublish(t *testing.T) {
 			client := pb.NewWalrusClient(conn)
 
 			// publish to topic
-			publishRequest := pb.PublishRequest{
+			_, err = client.Publish(tt.args.ctx, &pb.PublishRequest{
 				Message: &pb.Message{
 					Topic:       tt.args.message.TopicName.String(),
 					PublishedBy: tt.args.message.PublishedBy,
 					Body:        tt.args.message.Body,
 				},
-			}
-			_, err = client.Publish(tt.args.ctx, &publishRequest)
-			if *tt.wantErr != (grpcError{}) {
-				s, _ := status.FromError(err)
-				assert.Equal(t, *tt.wantErr, grpcError{code: s.Code(), msg: fmt.Errorf("%s", s.Message())})
+			})
+			assert.ErrorIs(t, err, tt.wantErr)
+			if tt.wantErr != nil {
+				gotCode, _ := status.FromError(err)
+				assert.Equal(t, tt.wantCode, gotCode.Code())
 				return
 			}
 			assert.NoError(t, err)
