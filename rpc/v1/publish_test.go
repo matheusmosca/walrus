@@ -121,7 +121,7 @@ func TestPublish(t *testing.T) {
 				message: vos.Message{
 					TopicName:   "walrus",
 					PublishedBy: "",
-					Body:        []byte("helloorld"),
+					Body:        []byte("hello world"),
 				},
 			},
 			fields: fields{
